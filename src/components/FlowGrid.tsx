@@ -14,7 +14,8 @@
  */
 
 import type { ArgumentNode, Speech } from '@/lib/model/types';
-import { useRoundStore, selectSheetNodes, selectDrops } from '@/lib/store/useRoundStore';
+import { useRoundStore } from '@/lib/store/useRoundStore';
+import { detectDrops } from '@/lib/model/drops';
 import GridCell from './GridCell';
 
 // ─── Types used internally ────────────────────────────────────────────────────
@@ -39,9 +40,12 @@ function buildLayout(
   // Map speechId → column index
   const colIndex = new Map<string, number>(speeches.map((s, i) => [s.id, i]));
 
+  // M3: filter out nodes whose speechId doesn't exist in the format
+  const validNodes = nodes.filter(n => colIndex.has(n.speechId));
+
   // Build children map
   const childrenByParent = new Map<string | null, ArgumentNode[]>();
-  for (const node of nodes) {
+  for (const node of validNodes) {
     const key = node.parentId;
     if (!childrenByParent.has(key)) childrenByParent.set(key, []);
     childrenByParent.get(key)!.push(node);
@@ -58,12 +62,16 @@ function buildLayout(
     return ca !== cb ? ca - cb : a.order - b.order;
   });
 
-  // Leaf count (memoized)
+  // Leaf count (memoized) with cycle guard
   const leafCountCache = new Map<string, number>();
-  function leafCount(node: ArgumentNode): number {
+  function leafCount(node: ArgumentNode, visiting: Set<string> = new Set()): number {
     if (leafCountCache.has(node.id)) return leafCountCache.get(node.id)!;
+    // Cycle guard: if we've already entered this node on the current path, treat as leaf
+    if (visiting.has(node.id)) return 1;
+    visiting.add(node.id);
     const children = childrenByParent.get(node.id) ?? [];
-    const count = children.length === 0 ? 1 : children.reduce((s, c) => s + leafCount(c), 0);
+    const count = children.length === 0 ? 1 : children.reduce((s, c) => s + leafCount(c, visiting), 0);
+    visiting.delete(node.id);
     leafCountCache.set(node.id, count);
     return count;
   }
@@ -104,18 +112,18 @@ export interface FlowGridProps {
 }
 
 export default function FlowGrid({ sheetId }: FlowGridProps) {
-  const round = useRoundStore(s => s.round);
+  // Narrow store subscriptions to avoid re-renders on timer ticks
+  const nodes = useRoundStore(s => s.round?.nodes ?? []);
+  const format = useRoundStore(s => s.round?.format ?? null);
   const selection = useRoundStore(s => s.selection);
   const setSelection = useRoundStore(s => s.setSelection);
 
-  if (!round) return null;
+  if (!format) return null;
 
-  const { format } = round;
   const speeches = format.speeches;
-  const numCols = speeches.length;
 
-  const nodes = selectSheetNodes(round, sheetId);
-  const droppedIds = new Set(selectDrops(round, sheetId));
+  const sheetNodes = nodes.filter(n => n.sheetId === sheetId);
+  const droppedIds = new Set(detectDrops(nodes, format, sheetId));
 
   // ── Compute group header info ──────────────────────────────────────────────
   // Build "top header" cells: runs of same non-empty group get a colSpan header;
@@ -123,6 +131,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
   interface TopCell {
     label: string;
     span: number;
+    side: 'aff' | 'neg' | null;
   }
   const topCells: TopCell[] = [];
   let i = 0;
@@ -133,17 +142,19 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
       // count consecutive speeches with the same group
       let j = i;
       while (j < speeches.length && speeches[j].group === g) j++;
-      topCells.push({ label: g, span: j - i });
+      // derive side from the first speech in the group
+      const side = speeches[i].side;
+      topCells.push({ label: g, span: j - i, side });
       i = j;
       hasGroups = true;
     } else {
-      topCells.push({ label: '', span: 1 });
+      topCells.push({ label: '', span: 1, side: null });
       i++;
     }
   }
 
   // ── Build layout ───────────────────────────────────────────────────────────
-  const { placed, totalRows } = buildLayout(nodes, speeches);
+  const { placed, totalRows } = buildLayout(sheetNodes, speeches);
 
   // Build lookup: (row, col) → PlacedNode or 'covered' or undefined
   const cellMap = new Map<string, PlacedNode | 'covered'>();
@@ -158,7 +169,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
 
   // Children lookup (for arg-parent class)
   const hasChildrenSet = new Set<string>();
-  for (const node of nodes) {
+  for (const node of sheetNodes) {
     if (node.parentId !== null) hasChildrenSet.add(node.parentId);
   }
 
@@ -169,7 +180,11 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
           <tr>
             {topCells.map((cell, idx) =>
               cell.label ? (
-                <th key={idx} colSpan={cell.span} className="side-neg">
+                <th
+                  key={idx}
+                  colSpan={cell.span}
+                  className={cell.side === 'aff' ? 'side-aff' : 'side-neg'}
+                >
                   {cell.label}
                 </th>
               ) : (
@@ -226,7 +241,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                       sheetId={sheetId}
                       speechId={speech.id}
                       isDropped={isDropped}
-                      sheetNodes={nodes}
+                      sheetNodes={sheetNodes}
                       hasChildren={hasChildrenSet.has(node.id)}
                     />
                   </td>

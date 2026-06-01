@@ -69,7 +69,6 @@ export default function GridCell({
         onKeyDown={e => {
           if (e.key === 'Enter') setMode('normal');
         }}
-        autoFocus
       />
     );
   }

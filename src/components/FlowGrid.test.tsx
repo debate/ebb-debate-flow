@@ -12,7 +12,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { useRoundStore } from '@/lib/store/useRoundStore';
-import { makeFormatByKey } from '@/lib/format/presets';
+import { makeFormatByKey, makeFormat } from '@/lib/format/presets';
 import FlowGrid from './FlowGrid';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -209,5 +209,63 @@ describe('FlowGrid', () => {
 
     const rows = document.querySelectorAll('tbody tr');
     expect(rows.length).toBeGreaterThan(0);
+  });
+
+  // ── Cycle guard (leafCount stack overflow prevention) ──────────────────────
+
+  it('does NOT throw when two nodes form a parentId cycle', () => {
+    const fmt = makeFormatByKey('policy');
+    useRoundStore.getState().createRound({ role: 'neg', format: fmt, meta: {} });
+    const sheetId = useRoundStore.getState().addSheet({ title: 'Cycle', group: 'case' });
+
+    const speeches = fmt.speeches;
+    const s1NC = speeches[1].id;
+    const s2AC = speeches[2].id;
+
+    // Create two nodes in different speeches
+    const nodeA = useRoundStore.getState().addNode({
+      sheetId,
+      speechId: s1NC,
+      parentId: null,
+      text: 'Node A',
+    });
+    const nodeB = useRoundStore.getState().addNode({
+      sheetId,
+      speechId: s2AC,
+      parentId: nodeA,
+      text: 'Node B',
+    });
+
+    // Forcibly create a cycle: A→B, B→A (bypasses normal tree constraints)
+    useRoundStore.getState().setNodeParent(nodeA, nodeB);
+
+    // Render must not throw (cycle guard prevents stack overflow)
+    expect(() => render(<FlowGrid sheetId={sheetId} />)).not.toThrow();
+  });
+
+  // ── Group header side class ────────────────────────────────────────────────
+
+  it('applies side-aff class to a group header spanning aff speeches', () => {
+    // Build a custom format with two adjacent aff speeches sharing a group
+    const fmt = makeFormat({
+      name: 'Custom',
+      speeches: [
+        { name: 'NC', side: 'neg', seconds: 420 },
+        { name: 'AR1', side: 'aff', seconds: 240, group: 'Aff block' },
+        { name: 'AR2', side: 'aff', seconds: 180, group: 'Aff block' },
+        { name: 'NR', side: 'neg', seconds: 360 },
+      ],
+      prepSeconds: { aff: 240, neg: 240 },
+    });
+
+    useRoundStore.getState().createRound({ role: 'neg', format: fmt, meta: {} });
+    const sheetId = useRoundStore.getState().addSheet({ title: 'AffGroup', group: 'case' });
+
+    render(<FlowGrid sheetId={sheetId} />);
+
+    const headers = screen.getAllByRole('columnheader');
+    const affBlockHeader = headers.find(h => h.textContent === 'Aff block');
+    expect(affBlockHeader).toBeDefined();
+    expect(affBlockHeader!.classList.contains('side-aff')).toBe(true);
   });
 });
