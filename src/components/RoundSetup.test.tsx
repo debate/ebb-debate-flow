@@ -116,8 +116,8 @@ describe('RoundSetup', () => {
 
     // Case sheet should have been created and set as active
     expect(state.round!.sheets).toHaveLength(1);
-    expect(state.round!.sheets[0].title).toBe('Case');
-    expect(state.round!.sheets[0].group).toBe('case');
+    expect(state.round!.sheets[0].title).toBe('Aff');
+    expect(state.round!.sheets[0].group).toBe('aff');
     expect(state.activeSheetId).toBe(state.round!.sheets[0].id);
   });
 

@@ -181,7 +181,7 @@ describe('attachAutosave', () => {
     expect(round).not.toBeNull();
 
     // Trigger a mutation
-    useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
 
     // Advance timers past the debounce window (400ms)
     vi.advanceTimersByTime(500);
@@ -211,7 +211,7 @@ describe('attachAutosave', () => {
     const round = useRoundStore.getState().round!;
 
     // Mutate but do NOT advance timers — pending save in buffer
-    useRoundStore.getState().addSheet({ title: 'Offcase', group: 'offcase' });
+    useRoundStore.getState().addSheet({ title: 'Offcase', group: 'neg' });
 
     // Unsubscribe should flush the pending save immediately (no timer advance needed)
     unsubscribe();
@@ -260,7 +260,7 @@ describe('attachAutosave', () => {
     });
 
     // First mutation + flush
-    useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     vi.advanceTimersByTime(500);
     await Promise.resolve();
     await Promise.resolve();

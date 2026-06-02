@@ -15,7 +15,7 @@ function makeRound(overrides: Partial<Round> = {}): Round {
     format: makeFormatByKey('policy'),
     meta: { tournament: 'Nationals', roundLabel: 'Round 1' },
     sheets: [
-      { id: 'sheet_001', title: 'Case', group: 'case', order: 0 },
+      { id: 'sheet_001', title: 'Case', group: 'aff', order: 0 },
     ],
     nodes: [
       {

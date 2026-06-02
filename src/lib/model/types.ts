@@ -43,11 +43,11 @@ export interface ArgumentNode {
   numberOverride?: number | null;
 }
 
-/** A flow sheet (page) grouping arguments by case/offcase. */
+/** A flow sheet (page) grouping arguments. */
 export interface Sheet {
   id: string;
   title: string;
-  group: 'case' | 'offcase';
+  group: 'aff' | 'neg';
   /** Display order among sheets. */
   order: number;
 }

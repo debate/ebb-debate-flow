@@ -25,8 +25,8 @@ function setupTwoSheets() {
   const fmt = makeFormatByKey('policy');
   useRoundStore.getState().createRound({ role: 'aff', format: fmt, meta: {} });
 
-  const sheet1Id = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
-  const sheet2Id = useRoundStore.getState().addSheet({ title: 'Topicality', group: 'offcase' });
+  const sheet1Id = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
+  const sheet2Id = useRoundStore.getState().addSheet({ title: 'Topicality', group: 'neg' });
 
   const speeches = fmt.speeches;
   const s1AC = speeches[0].id;

@@ -121,29 +121,29 @@ describe('addSheet', () => {
   });
 
   it('returns a sheet id with sheet_ prefix', () => {
-    const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     expect(id).toMatch(/^sheet_/);
   });
 
   it('appends a sheet to round.sheets', () => {
-    useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     expect(useRoundStore.getState().round!.sheets).toHaveLength(1);
   });
 
   it('sets activeSheetId to the first added sheet', () => {
-    const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     expect(useRoundStore.getState().activeSheetId).toBe(id);
   });
 
   it('does not change activeSheetId when a second sheet is added', () => {
-    const first = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
-    useRoundStore.getState().addSheet({ title: 'DA', group: 'offcase' });
+    const first = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
+    useRoundStore.getState().addSheet({ title: 'DA', group: 'neg' });
     expect(useRoundStore.getState().activeSheetId).toBe(first);
   });
 
   it('assigns incrementing order values', () => {
-    useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
-    useRoundStore.getState().addSheet({ title: 'DA', group: 'offcase' });
+    useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
+    useRoundStore.getState().addSheet({ title: 'DA', group: 'neg' });
     const sheets = useRoundStore.getState().round!.sheets;
     expect(sheets[0].order).toBe(0);
     expect(sheets[1].order).toBe(1);
@@ -153,14 +153,14 @@ describe('addSheet', () => {
     vi.useFakeTimers();
     const before = useRoundStore.getState().round!.updatedAt;
     vi.advanceTimersByTime(1);
-    useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     expect(useRoundStore.getState().round!.updatedAt).toBeGreaterThan(before);
     vi.useRealTimers();
   });
 
   it('throws when round is null', () => {
     useRoundStore.setState(BLANK_STATE);
-    expect(() => useRoundStore.getState().addSheet({ title: 'x', group: 'case' })).toThrow('No active round');
+    expect(() => useRoundStore.getState().addSheet({ title: 'x', group: 'aff' })).toThrow('No active round');
   });
 });
 
@@ -174,14 +174,14 @@ describe('renameSheet', () => {
   });
 
   it('renames a sheet', () => {
-    const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     useRoundStore.getState().renameSheet(id, 'Updated Case');
     const sheet = useRoundStore.getState().round!.sheets.find(s => s.id === id);
     expect(sheet!.title).toBe('Updated Case');
   });
 
   it('updates updatedAt on rename', () => {
-    const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     const before = useRoundStore.getState().round!.updatedAt;
     useRoundStore.getState().renameSheet(id, 'New');
     expect(useRoundStore.getState().round!.updatedAt).toBeGreaterThanOrEqual(before);
@@ -201,13 +201,13 @@ describe('removeSheet', () => {
   });
 
   it('removes the sheet from round.sheets', () => {
-    const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     useRoundStore.getState().removeSheet(id);
     expect(useRoundStore.getState().round!.sheets).toHaveLength(0);
   });
 
   it('also removes nodes belonging to that sheet', () => {
-    const sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    const sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     const fmt = useRoundStore.getState().round!.format;
     const speechId = fmt.speeches[0].id;
     useRoundStore.getState().addNode({ sheetId, speechId, parentId: null, text: 'arg' });
@@ -217,21 +217,21 @@ describe('removeSheet', () => {
   });
 
   it('sets activeSheetId to null when active sheet is removed and no other sheets', () => {
-    const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     useRoundStore.getState().removeSheet(id);
     expect(useRoundStore.getState().activeSheetId).toBeNull();
   });
 
   it('sets activeSheetId to another sheet when active is removed', () => {
-    const first = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
-    const second = useRoundStore.getState().addSheet({ title: 'DA', group: 'offcase' });
+    const first = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
+    const second = useRoundStore.getState().addSheet({ title: 'DA', group: 'neg' });
     useRoundStore.getState().removeSheet(first);
     expect(useRoundStore.getState().activeSheetId).toBe(second);
   });
 
   it('does not change activeSheetId when a non-active sheet is removed', () => {
-    const first = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
-    const second = useRoundStore.getState().addSheet({ title: 'DA', group: 'offcase' });
+    const first = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
+    const second = useRoundStore.getState().addSheet({ title: 'DA', group: 'neg' });
     useRoundStore.getState().removeSheet(second);
     expect(useRoundStore.getState().activeSheetId).toBe(first);
   });
@@ -242,7 +242,7 @@ describe('removeSheet', () => {
   });
 
   it('clears selection when the selected sheet is removed', () => {
-    const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     const fmt = useRoundStore.getState().round!.format;
     const speechId = fmt.speeches[0].id;
     useRoundStore.getState().setSelection({ sheetId: id, speechId, nodeId: 'n1' });
@@ -251,8 +251,8 @@ describe('removeSheet', () => {
   });
 
   it('keeps selection when a different sheet is removed', () => {
-    const first = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
-    const second = useRoundStore.getState().addSheet({ title: 'DA', group: 'offcase' });
+    const first = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
+    const second = useRoundStore.getState().addSheet({ title: 'DA', group: 'neg' });
     const fmt = useRoundStore.getState().round!.format;
     const speechId = fmt.speeches[0].id;
     useRoundStore.getState().setSelection({ sheetId: first, speechId, nodeId: 'n1' });
@@ -269,7 +269,7 @@ describe('reorderSheet', () => {
   });
 
   it('updates the order of a sheet', () => {
-    const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     useRoundStore.getState().reorderSheet(id, 5);
     const sheet = useRoundStore.getState().round!.sheets.find(s => s.id === id);
     expect(sheet!.order).toBe(5);
@@ -291,8 +291,8 @@ describe('setActiveSheet', () => {
   });
 
   it('sets the active sheet', () => {
-    useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
-    const second = useRoundStore.getState().addSheet({ title: 'DA', group: 'offcase' });
+    useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
+    const second = useRoundStore.getState().addSheet({ title: 'DA', group: 'neg' });
     useRoundStore.getState().setActiveSheet(second);
     expect(useRoundStore.getState().activeSheetId).toBe(second);
   });
@@ -308,7 +308,7 @@ describe('addNode', () => {
     resetStore();
     const fmt = makeFormatByKey('policy');
     useRoundStore.getState().createRound({ role: 'aff', format: fmt, meta: {} });
-    sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     speechId = useRoundStore.getState().round!.format.speeches[0].id;
   });
 
@@ -349,7 +349,7 @@ describe('updateNodeText', () => {
     resetStore();
     const fmt = makeFormatByKey('policy');
     useRoundStore.getState().createRound({ role: 'aff', format: fmt, meta: {} });
-    sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     speechId = useRoundStore.getState().round!.format.speeches[0].id;
     nodeId = useRoundStore.getState().addNode({ sheetId, speechId, parentId: null, text: 'original' });
   });
@@ -383,7 +383,7 @@ describe('toggleNodeStatus', () => {
     resetStore();
     const fmt = makeFormatByKey('policy');
     useRoundStore.getState().createRound({ role: 'aff', format: fmt, meta: {} });
-    sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     speechId = useRoundStore.getState().round!.format.speeches[0].id;
     nodeId = useRoundStore.getState().addNode({ sheetId, speechId, parentId: null });
   });
@@ -419,7 +419,7 @@ describe('setNodeParent', () => {
     resetStore();
     const fmt = makeFormatByKey('policy');
     useRoundStore.getState().createRound({ role: 'aff', format: fmt, meta: {} });
-    sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     speechId = useRoundStore.getState().round!.format.speeches[0].id;
     nodeA = useRoundStore.getState().addNode({ sheetId, speechId, parentId: null });
     nodeB = useRoundStore.getState().addNode({ sheetId, speechId, parentId: null });
@@ -454,7 +454,7 @@ describe('removeNode', () => {
     resetStore();
     const fmt = makeFormatByKey('policy');
     useRoundStore.getState().createRound({ role: 'aff', format: fmt, meta: {} });
-    sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     speechId = useRoundStore.getState().round!.format.speeches[0].id;
     nodeId = useRoundStore.getState().addNode({ sheetId, speechId, parentId: null });
   });
@@ -517,7 +517,7 @@ describe('moveNode', () => {
     resetStore();
     const fmt = makeFormatByKey('policy');
     useRoundStore.getState().createRound({ role: 'aff', format: fmt, meta: {} });
-    sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     speechId = useRoundStore.getState().round!.format.speeches[0].id;
     nodeId = useRoundStore.getState().addNode({ sheetId, speechId, parentId: null });
   });
@@ -584,8 +584,8 @@ describe('selectSheetNodes', () => {
     const fmt = makeFormatByKey('policy');
     useRoundStore.setState(BLANK_STATE);
     useRoundStore.getState().createRound({ role: 'aff', format: fmt, meta: {} });
-    const sheetA = useRoundStore.getState().addSheet({ title: 'A', group: 'case' });
-    const sheetB = useRoundStore.getState().addSheet({ title: 'B', group: 'offcase' });
+    const sheetA = useRoundStore.getState().addSheet({ title: 'A', group: 'aff' });
+    const sheetB = useRoundStore.getState().addSheet({ title: 'B', group: 'neg' });
     const speechId = fmt.speeches[0].id;
     useRoundStore.getState().addNode({ sheetId: sheetA, speechId, parentId: null, text: 'on A' });
     useRoundStore.getState().addNode({ sheetId: sheetB, speechId, parentId: null, text: 'on B' });
@@ -607,7 +607,7 @@ describe('selectDrops and selectSheetDropCount', () => {
     useRoundStore.setState(BLANK_STATE);
     const fmt = makeFormatByKey('policy');
     useRoundStore.getState().createRound({ role: 'judge', format: fmt, meta: {} });
-    const sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    const sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
 
     // speeches: 1AC(aff), 1NC(neg), 2AC(aff) ...
     const [s1AC, s1NC, s2AC] = fmt.speeches.map(s => s.id);
@@ -629,21 +629,21 @@ describe('selectDrops and selectSheetDropCount', () => {
 
 describe('selectSheetsByGroup', () => {
   it('returns empty array for null round', () => {
-    expect(selectSheetsByGroup(null, 'case')).toEqual([]);
+    expect(selectSheetsByGroup(null, 'aff')).toEqual([]);
   });
 
   it('returns only sheets matching the group, sorted by order', () => {
     useRoundStore.setState(BLANK_STATE);
     const fmt = makeFormatByKey('policy');
     useRoundStore.getState().createRound({ role: 'aff', format: fmt, meta: {} });
-    useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
-    useRoundStore.getState().addSheet({ title: 'DA', group: 'offcase' });
-    useRoundStore.getState().addSheet({ title: 'K', group: 'offcase' });
+    useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
+    useRoundStore.getState().addSheet({ title: 'DA', group: 'neg' });
+    useRoundStore.getState().addSheet({ title: 'K', group: 'neg' });
 
     const round = useRoundStore.getState().round;
-    const offcase = selectSheetsByGroup(round, 'offcase');
+    const offcase = selectSheetsByGroup(round, 'neg');
     expect(offcase).toHaveLength(2);
-    expect(offcase.every(s => s.group === 'offcase')).toBe(true);
+    expect(offcase.every(s => s.group === 'neg')).toBe(true);
     expect(offcase[0].order).toBeLessThanOrEqual(offcase[1].order);
   });
 });

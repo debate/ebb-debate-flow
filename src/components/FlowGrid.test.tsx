@@ -43,7 +43,7 @@ interface TestContext {
 function setupScenario(): TestContext {
   const fmt = makeFormatByKey('policy');
   useRoundStore.getState().createRound({ role: 'neg', format: fmt, meta: {} });
-  const sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+  const sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
 
   const speeches = fmt.speeches;
   // Policy order: 1AC[0], 1NC[1], 2AC[2], Block[3], 1AR[4], 2NR[5], 2AR[6]
@@ -202,7 +202,7 @@ describe('FlowGrid', () => {
   it('renders at least one row even when the sheet has no nodes', () => {
     const fmt = makeFormatByKey('policy');
     useRoundStore.getState().createRound({ role: 'neg', format: fmt, meta: {} });
-    const sheetId = useRoundStore.getState().addSheet({ title: 'Empty', group: 'case' });
+    const sheetId = useRoundStore.getState().addSheet({ title: 'Empty', group: 'aff' });
 
     render(<FlowGrid sheetId={sheetId} />);
 
@@ -215,7 +215,7 @@ describe('FlowGrid', () => {
   it('does NOT throw when two nodes form a parentId cycle', () => {
     const fmt = makeFormatByKey('policy');
     useRoundStore.getState().createRound({ role: 'neg', format: fmt, meta: {} });
-    const sheetId = useRoundStore.getState().addSheet({ title: 'Cycle', group: 'case' });
+    const sheetId = useRoundStore.getState().addSheet({ title: 'Cycle', group: 'aff' });
 
     const speeches = fmt.speeches;
     const s1NC = speeches[1].id;
@@ -258,7 +258,7 @@ describe('FlowGrid', () => {
     });
 
     useRoundStore.getState().createRound({ role: 'neg', format: fmt, meta: {} });
-    const sheetId = useRoundStore.getState().addSheet({ title: 'AffGroup', group: 'case' });
+    const sheetId = useRoundStore.getState().addSheet({ title: 'AffGroup', group: 'aff' });
 
     render(<FlowGrid sheetId={sheetId} />);
 

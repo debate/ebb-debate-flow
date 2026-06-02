@@ -39,7 +39,7 @@ export interface RoundState {
 export interface RoundActions {
   createRound(input: { role: Role; format: Format; meta: RoundMeta; topic?: string }): void;
 
-  addSheet(input: { title: string; group: 'case' | 'offcase' }): string;
+  addSheet(input: { title: string; group: 'aff' | 'neg' }): string;
   renameSheet(sheetId: string, title: string): void;
   removeSheet(sheetId: string): void;
   reorderSheet(sheetId: string, newOrder: number): void;
@@ -496,7 +496,7 @@ export function selectSheetDropCount(round: Round | null, sheetId: string): numb
 /** Returns sheets belonging to a group, sorted ascending by order. */
 export function selectSheetsByGroup(
   round: Round | null,
-  group: 'case' | 'offcase',
+  group: 'aff' | 'neg',
 ): Sheet[] {
   if (!round) return [];
   return round.sheets

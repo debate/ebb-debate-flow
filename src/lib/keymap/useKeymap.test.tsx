@@ -38,7 +38,7 @@ describe('useKeymap', () => {
     const fmt = makeFormatByKey('policy');
     const store = useRoundStore.getState();
     store.createRound({ role: 'aff', format: fmt, meta: {} });
-    const sheetId = useRoundStore.getState().addSheet({ title: 'DA', group: 'offcase' });
+    const sheetId = useRoundStore.getState().addSheet({ title: 'DA', group: 'neg' });
     const sp = fmt.speeches[1].id;
     const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
     const b = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
@@ -54,7 +54,7 @@ describe('useKeymap', () => {
     const fmt = makeFormatByKey('policy');
     const store = useRoundStore.getState();
     store.createRound({ role: 'aff', format: fmt, meta: {} });
-    const sheetId = useRoundStore.getState().addSheet({ title: 'DA', group: 'offcase' });
+    const sheetId = useRoundStore.getState().addSheet({ title: 'DA', group: 'neg' });
     const sp = fmt.speeches[1].id;
     const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
     useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });

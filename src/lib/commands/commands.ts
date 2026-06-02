@@ -175,7 +175,7 @@ export function executeCommand(id: CommandId): void {
 
     case 'sheet.new': {
       if (!round) return;
-      const newSheetId = state.addSheet({ title: 'Untitled', group: 'offcase' });
+      const newSheetId = state.addSheet({ title: 'Untitled', group: 'neg' });
       state.setActiveSheet(newSheetId);
       return;
     }

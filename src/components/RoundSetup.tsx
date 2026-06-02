@@ -52,7 +52,7 @@ export default function RoundSetup() {
     });
 
     // Bootstrap default Case sheet; addSheet auto-sets it active for first sheet
-    addSheet({ title: 'Case', group: 'case' });
+    addSheet({ title: 'Aff', group: 'aff' });
   }
 
   return (

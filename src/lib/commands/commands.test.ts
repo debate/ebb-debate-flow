@@ -29,7 +29,7 @@ function setupRound() {
   const fmt = makeFormatByKey('policy');
   const store = useRoundStore.getState();
   store.createRound({ role: 'aff', format: fmt, meta: {} });
-  const sheetId = useRoundStore.getState().addSheet({ title: 'DA', group: 'offcase' });
+  const sheetId = useRoundStore.getState().addSheet({ title: 'DA', group: 'neg' });
   return { fmt, sheetId, speeches: fmt.speeches };
 }
 
@@ -299,8 +299,8 @@ describe('sheet navigation', () => {
     setupRound();
     const s = useRoundStore.getState();
     // setupRound already added one sheet ('DA'). Add two more.
-    const s2 = s.addSheet({ title: 'CP', group: 'offcase' });
-    const s3 = s.addSheet({ title: 'K', group: 'offcase' });
+    const s2 = s.addSheet({ title: 'CP', group: 'neg' });
+    const s3 = s.addSheet({ title: 'K', group: 'neg' });
     const sheets = useRoundStore.getState().round!.sheets
       .slice()
       .sort((a, b) => a.order - b.order);

@@ -13,13 +13,13 @@ import { useRoundStore, selectSheetsByGroup, selectSheetDropCount } from '@/lib/
 import type { Sheet } from '@/lib/model/types';
 
 interface GroupConfig {
-  group: 'case' | 'offcase';
+  group: 'aff' | 'neg';
   label: string;
 }
 
 const GROUPS: GroupConfig[] = [
-  { group: 'case', label: 'Case' },
-  { group: 'offcase', label: 'Off-case' },
+  { group: 'aff', label: 'Aff' },
+  { group: 'neg', label: 'Neg' },
 ];
 
 export default function Sidebar() {
@@ -60,7 +60,7 @@ export default function Sidebar() {
         type="button"
         className="btn"
         style={styles.addBtn}
-        onClick={() => addSheet({ title: 'Untitled', group: 'offcase' })}
+        onClick={() => addSheet({ title: 'Untitled', group: 'neg' })}
         data-testid="add-sheet"
       >
         + Add sheet

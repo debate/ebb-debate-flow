@@ -30,8 +30,8 @@ function setupRound() {
     format: makeFormatByKey('policy'),
     meta: { opponent: 'Opp' },
   });
-  const caseId = store.addSheet({ title: 'Case', group: 'case' });
-  const daId = store.addSheet({ title: 'Disad', group: 'offcase' });
+  const caseId = store.addSheet({ title: 'Case', group: 'aff' });
+  const daId = store.addSheet({ title: 'Disad', group: 'neg' });
   return { caseId, daId };
 }
 
@@ -40,16 +40,16 @@ describe('Sidebar', () => {
     resetStore();
   });
 
-  it('lists sheets grouped as Case / Off-case', () => {
+  it('lists sheets grouped as Aff / Neg', () => {
     setupRound();
     render(<Sidebar />);
 
-    // Group header (unique)
-    expect(screen.getByText('Off-case')).toBeInTheDocument();
-    // "Case" appears as both the group header and a sheet title.
-    expect(screen.getAllByText('Case').length).toBe(2);
-
-    // Off-case sheet title
+    // Group headers
+    expect(screen.getByText('Aff')).toBeInTheDocument();
+    expect(screen.getByText('Neg')).toBeInTheDocument();
+    // Aff sheet title
+    expect(screen.getByText('Case')).toBeInTheDocument();
+    // Neg sheet title
     expect(screen.getByText('Disad')).toBeInTheDocument();
   });
 
@@ -98,6 +98,6 @@ describe('Sidebar', () => {
 
     const newest = after.sheets[after.sheets.length - 1];
     expect(newest.title).toBe('Untitled');
-    expect(newest.group).toBe('offcase');
+    expect(newest.group).toBe('neg');
   });
 });
