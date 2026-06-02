@@ -3,6 +3,14 @@ import type { Boxes } from '@/lib/editor/types';
 import { newBox } from '@/lib/editor/boxes';
 import { applyAction, applyActionBundle, type Action } from '@/lib/editor/action';
 
+// Compare maps independent of object key insertion order (key order is not
+// semantically meaningful; tree order lives in each node's `children` array).
+function normalize(boxes: Boxes): string {
+  return JSON.stringify(
+    Object.keys(boxes).sort().map(k => [k, boxes[k]]),
+  );
+}
+
 function base(): Boxes {
   return {
     root: { value: newBox({ empty: true }), parentId: null, children: ['a', 'b'] },
@@ -16,7 +24,7 @@ function roundTrips(boxes: Boxes, action: Action): boolean {
   const before = structuredClone(boxes);
   const inverse = applyAction(boxes, action);
   applyAction(boxes, inverse);
-  return JSON.stringify(boxes) === JSON.stringify(before);
+  return normalize(boxes) === normalize(before);
 }
 
 describe('applyAction: add', () => {
@@ -110,6 +118,6 @@ describe('applyActionBundle', () => {
       { tag: 'update', id: 'b', value: newBox({ content: 'B2' }) },
     ]);
     applyActionBundle(b, inverse);
-    expect(JSON.stringify(b)).toBe(JSON.stringify(start));
+    expect(normalize(b)).toBe(normalize(start));
   });
 });

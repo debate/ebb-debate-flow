@@ -3,7 +3,7 @@
  * applyAction returns the action that exactly undoes it (identity on failure).
  * This is the foundation of undo/redo.
  */
-import type { Box, BoxNode, Boxes } from '@/lib/editor/types';
+import type { Box, Boxes } from '@/lib/editor/types';
 
 export type Action =
   | { tag: 'add'; parentId: string; id: string; index: number; value: Box; children?: string[] }
@@ -19,42 +19,18 @@ function clampIndex(index: number, length: number): number {
   return Math.max(0, Math.min(index, length));
 }
 
-/**
- * Inserts `id` into the `boxes` map immediately before `beforeId` (if provided
- * and present). This preserves key-insertion order so that round-trip
- * delete→add restores the original JSON.stringify order.
- */
-function insertNodeInMap(boxes: Boxes, id: string, node: typeof boxes[string], beforeId?: string): void {
-  if (!beforeId || !(beforeId in boxes)) {
-    boxes[id] = node;
-    return;
-  }
-  // Rebuild the map in-place with id inserted before beforeId.
-  const entries = Object.entries(boxes);
-  for (const key of Object.keys(boxes)) delete boxes[key];
-  for (const [k, v] of entries) {
-    if (k === beforeId) boxes[id] = node;
-    boxes[k] = v;
-  }
-}
-
 /** Applies `action` (mutating `boxes`) and returns its inverse. */
 export function applyAction(boxes: Boxes, action: Action): Action {
   switch (action.tag) {
     case 'add': {
       const parent = boxes[action.parentId];
       if (!parent) return { tag: 'identity' };
-      const clampedIndex = clampIndex(action.index, parent.children.length);
-      // Determine the sibling that should come after this node in the map
-      // so that key insertion order is stable for round-trips.
-      const nextSiblingId = parent.children[clampedIndex]; // sibling currently at that slot
-      const node: BoxNode = {
+      boxes[action.id] = {
         value: action.value,
         parentId: action.parentId,
         children: action.children ? [...action.children] : [],
       };
-      insertNodeInMap(boxes, action.id, node, nextSiblingId);
-      parent.children.splice(clampedIndex, 0, action.id);
+      parent.children.splice(clampIndex(action.index, parent.children.length), 0, action.id);
       return { tag: 'delete', id: action.id };
     }
     case 'delete': {
