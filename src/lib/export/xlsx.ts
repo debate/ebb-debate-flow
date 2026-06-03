@@ -11,6 +11,7 @@ import {
   buildFlowSheetXml,
   registerSheetsInWorkbook,
   registerSheetsInRels,
+  removeCalcChainFromRels,
   registerSheetsInContentTypes,
   setCellInline,
   type NewSheet,
@@ -70,7 +71,9 @@ export function buildXlsx(round: Round, templateBytes: Uint8Array): Uint8Array {
 
   // Register everywhere.
   files['xl/workbook.xml'] = strToU8(registerSheetsInWorkbook(strFromU8(files['xl/workbook.xml']), newSheets));
-  files['xl/_rels/workbook.xml.rels'] = strToU8(registerSheetsInRels(strFromU8(files['xl/_rels/workbook.xml.rels']), newSheets));
+  files['xl/_rels/workbook.xml.rels'] = strToU8(
+    removeCalcChainFromRels(registerSheetsInRels(strFromU8(files['xl/_rels/workbook.xml.rels']), newSheets)),
+  );
   files['[Content_Types].xml'] = strToU8(registerSheetsInContentTypes(strFromU8(files['[Content_Types].xml']), newSheets));
 
   // Drop calcChain so Excel rebuilds it (sheet set changed).

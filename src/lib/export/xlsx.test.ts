@@ -47,5 +47,11 @@ describe('buildXlsx', () => {
     expect(strFromU8(files['xl/workbook.xml'])).toContain('Politics DA');
     // Info sheet got the tournament value.
     expect(strFromU8(files['xl/worksheets/sheet1.xml'])).toContain('States');
+    // calcChain relationship removed from rels — no dangling reference.
+    expect(strFromU8(files['xl/_rels/workbook.xml.rels'])).not.toContain('calcChain');
+    // No duplicate xr:uid on the cloned sheet — prevents Excel corruption.
+    expect(newSheet).not.toContain('xr:uid=');
+    // Body cells carry the column style index from the template.
+    expect(newSheet).toContain('s="41"');
   });
 });
