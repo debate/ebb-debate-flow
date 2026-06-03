@@ -32,6 +32,20 @@ function round(): Round {
 }
 
 describe('buildXlsx', () => {
+  it('writes CX rows into the CX sheet', () => {
+    const r = round();
+    r.cx['1AC'] = [{ id: 'a', question: 'Why plan?', response: 'Because.' }];
+    const bytes = buildXlsx(r, template);
+    const files = unzipSync(bytes);
+    // Read all worksheet parts and join — we search for the written Q/A values
+    const cxXml = Object.keys(files)
+      .filter(k => k.startsWith('xl/worksheets/'))
+      .map(k => strFromU8(files[k]))
+      .join('');
+    expect(cxXml).toContain('Why plan?');
+    expect(cxXml).toContain('Because.');
+  });
+
   it('produces a valid zip with a populated sheet and patched Info', () => {
     const bytes = buildXlsx(round(), template);
     const files = unzipSync(bytes);

@@ -95,6 +95,60 @@ function updateAppXml(appXml: string, newSheets: NewSheet[]): string {
   return out;
 }
 
+/**
+ * Write CX rows into the CX sheet.
+ *
+ * CX sheet layout (from xl/worksheets/sheet5.xml in Flow.xlsx template):
+ *   Row 1: Period headers merged over column pairs (A1:B1=1AC CX, C1:D1=1NC CX, E1:F1=2AC CX, G1:H1=2NC CX)
+ *   Row 2: Column headers (Question/Response alternating A-H)
+ *   Row 3+: Data rows
+ *
+ *   Period → Question col | Response col | col styles (Q/R)
+ *   1AC    →      A       |      B       |   23 / 27
+ *   1NC    →      C       |      D       |   29 / 25
+ *   2AC    →      E       |      F       |   23 / 27
+ *   2NC    →      G       |      H       |   29 / 23
+ *
+ * The template has no pre-existing data rows, so we insert new <row> elements.
+ * Rows are interleaved: for each data row index i, all four periods write
+ * their i-th entry on the same Excel row (3+i).
+ */
+function patchCx(cxXml: string, round: Round): string {
+  const PERIODS: Array<{ key: keyof import('@/lib/model/types').CxData; qCol: string; rCol: string; qStyle: number; rStyle: number }> = [
+    { key: '1AC', qCol: 'A', rCol: 'B', qStyle: 23, rStyle: 27 },
+    { key: '1NC', qCol: 'C', rCol: 'D', qStyle: 29, rStyle: 25 },
+    { key: '2AC', qCol: 'E', rCol: 'F', qStyle: 23, rStyle: 27 },
+    { key: '2NC', qCol: 'G', rCol: 'H', qStyle: 29, rStyle: 23 },
+  ];
+  const FIRST_DATA_ROW = 3;
+
+  // Find the maximum number of rows across all periods.
+  const maxRows = Math.max(...PERIODS.map(p => round.cx[p.key].length));
+  if (maxRows === 0) return cxXml;
+
+  const makeCell = (ref: string, value: string, style: number): string =>
+    `<c r="${ref}" s="${style}" t="inlineStr"><is><t xml:space="preserve">${escXml(value)}</t></is></c>`;
+
+  let insertedRows = '';
+  for (let i = 0; i < maxRows; i++) {
+    const rowNum = FIRST_DATA_ROW + i;
+    let cells = '';
+    for (const p of PERIODS) {
+      const row = round.cx[p.key][i];
+      if (!row) continue;
+      if (row.question.trim()) cells += makeCell(`${p.qCol}${rowNum}`, row.question, p.qStyle);
+      if (row.response.trim()) cells += makeCell(`${p.rCol}${rowNum}`, row.response, p.rStyle);
+    }
+    if (cells) insertedRows += `<row r="${rowNum}" spans="1:8">${cells}</row>`;
+  }
+
+  // Insert new rows before </sheetData> and update the dimension.
+  let out = cxXml.replace('</sheetData>', `${insertedRows}</sheetData>`);
+  const lastRow = FIRST_DATA_ROW + maxRows - 1;
+  out = out.replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:H${lastRow}"/>`);
+  return out;
+}
+
 function patchInfo(infoXml: string, round: Round): string {
   let xml = infoXml;
   const sc = round.scouting;
@@ -136,6 +190,10 @@ export function buildXlsx(round: Round, templateBytes: Uint8Array): Uint8Array {
 
   // Patch Info sheet.
   files[`xl/worksheets/${infoPart}`] = strToU8(patchInfo(strFromU8(files[`xl/worksheets/${infoPart}`]), round));
+
+  // Patch CX sheet.
+  const cxPart = resolveSheetPart(workbookXml, relsXml, 'CX');
+  files[`xl/worksheets/${cxPart}`] = strToU8(patchCx(strFromU8(files[`xl/worksheets/${cxPart}`]), round));
 
   // Build one new sheet per flow sheet.
   const exportSheets = buildExportSheets(round);
