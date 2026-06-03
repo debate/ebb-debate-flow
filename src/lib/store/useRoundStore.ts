@@ -7,7 +7,7 @@
 
 import { create } from 'zustand';
 import type { CommandId } from '@/lib/commands/registry';
-import type { Round, Sheet, ArgumentNode, Format, Role, Side, RoundMeta, NodeStatus } from '@/lib/model/types';
+import type { Round, Sheet, ArgumentNode, Format, Role, Side, RoundMeta, NodeStatus, Scouting } from '@/lib/model/types';
 import { uid } from '@/lib/model/ids';
 import { emptyScouting, emptyCx, makeCxSheet } from '@/lib/model/normalize';
 import {
@@ -80,6 +80,8 @@ export interface RoundActions {
   setSettingsOpen(open: boolean): void;
   setCheatsheetOpen(open: boolean): void;
   setRenamingSheet(id: string | null): void;
+
+  setScouting(patch: Partial<Scouting>): void;
 
   startSpeech(speechId: string): void;
   tickSpeech(): void;
@@ -441,6 +443,12 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   // ── setRenamingSheet ───────────────────────────────────────────────────────
   setRenamingSheet(id) {
     set({ renamingSheetId: id });
+  },
+
+  // ── setScouting ────────────────────────────────────────────────────────────
+  setScouting(patch) {
+    if (!get().round) return;
+    get()._commit('scouting', r => ({ ...r, scouting: { ...r.scouting, ...patch } }));
   },
 
   // ── startSpeech ────────────────────────────────────────────────────────────

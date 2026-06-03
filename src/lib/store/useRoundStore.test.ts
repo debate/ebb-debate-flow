@@ -824,3 +824,14 @@ describe('keymap and modal flags', () => {
     expect(useRoundStore.getState().settingsOpen).toBe(false);
   });
 });
+
+describe('setScouting', () => {
+  it('deep-merges a partial and is undoable', () => {
+    useRoundStore.getState().createRound({ role: 'aff', format: makeFormatByKey('policy'), meta: {} });
+    useRoundStore.getState().setScouting({ affSchool: 'Westwood' });
+    expect(useRoundStore.getState().round!.scouting.affSchool).toBe('Westwood');
+    useRoundStore.getState().setScouting({ negSchool: 'Lincoln' });
+    expect(useRoundStore.getState().round!.scouting.affSchool).toBe('Westwood');
+    expect(useRoundStore.getState().round!.scouting.negSchool).toBe('Lincoln');
+  });
+});
