@@ -101,24 +101,6 @@ export interface Scouting {
   decision?: Decision;
 }
 
-/** A single cross-examination question/response pair. */
-export interface CxRow {
-  id: string;
-  question: string;
-  response: string;
-}
-
-/** Cross-ex data keyed by CX period. */
-export interface CxData {
-  '1AC': CxRow[];
-  '1NC': CxRow[];
-  '2AC': CxRow[];
-  '2NC': CxRow[];
-}
-
-/** The fixed CX period keys, in display order. */
-export type CxPeriod = keyof CxData;
-
 /** Top-level aggregate representing a complete debate round. */
 export interface Round {
   id: string;
@@ -130,6 +112,5 @@ export interface Round {
   scouting: Scouting;
   sheets: Sheet[];
   nodes: ArgumentNode[];
-  cx: CxData;
   timers: TimerState;
 }

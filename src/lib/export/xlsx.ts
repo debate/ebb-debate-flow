@@ -96,34 +96,43 @@ function updateAppXml(appXml: string, newSheets: NewSheet[]): string {
 }
 
 /**
- * Write CX rows into the CX sheet.
+ * Write CX nodes into the CX sheet.
  *
  * CX sheet layout (from xl/worksheets/sheet5.xml in Flow.xlsx template):
  *   Row 1: Period headers merged over column pairs (A1:B1=1AC CX, C1:D1=1NC CX, E1:F1=2AC CX, G1:H1=2NC CX)
  *   Row 2: Column headers (Question/Response alternating A-H)
  *   Row 3+: Data rows
  *
- *   Period → Question col | Response col | col styles (Q/R)
- *   1AC    →      A       |      B       |   23 / 27
- *   1NC    →      C       |      D       |   29 / 25
- *   2AC    →      E       |      F       |   23 / 27
- *   2NC    →      G       |      H       |   29 / 23
- *
- * The template has no pre-existing data rows, so we insert new <row> elements.
- * Rows are interleaved: for each data row index i, all four periods write
- * their i-th entry on the same Excel row (3+i).
+ * CX data is stored as ArgumentNodes on the CX sheet. Question nodes have
+ * speechId like 'cx-1ac-q'; response nodes are children (parentId = question.id)
+ * with speechId 'cx-1ac-r'. The 4 periods map to column pairs A/B, C/D, E/F, G/H.
  */
 function patchCx(cxXml: string, round: Round): string {
-  const PERIODS: Array<{ key: keyof import('@/lib/model/types').CxData; qCol: string; rCol: string; qStyle: number; rStyle: number }> = [
-    { key: '1AC', qCol: 'A', rCol: 'B', qStyle: 23, rStyle: 27 },
-    { key: '1NC', qCol: 'C', rCol: 'D', qStyle: 29, rStyle: 25 },
-    { key: '2AC', qCol: 'E', rCol: 'F', qStyle: 23, rStyle: 27 },
-    { key: '2NC', qCol: 'G', rCol: 'H', qStyle: 29, rStyle: 23 },
+  const PERIODS = [
+    { qId: 'cx-1ac-q', rId: 'cx-1ac-r', qCol: 'A', rCol: 'B', qStyle: 23, rStyle: 27 },
+    { qId: 'cx-1nc-q', rId: 'cx-1nc-r', qCol: 'C', rCol: 'D', qStyle: 29, rStyle: 25 },
+    { qId: 'cx-2ac-q', rId: 'cx-2ac-r', qCol: 'E', rCol: 'F', qStyle: 23, rStyle: 27 },
+    { qId: 'cx-2nc-q', rId: 'cx-2nc-r', qCol: 'G', rCol: 'H', qStyle: 29, rStyle: 23 },
   ];
   const FIRST_DATA_ROW = 3;
 
-  // Find the maximum number of rows across all periods.
-  const maxRows = Math.max(...PERIODS.map(p => round.cx[p.key].length));
+  const cxSheet = round.sheets.find(s => s.kind === 'cx');
+  if (!cxSheet) return cxXml;
+  const cxNodes = round.nodes.filter(n => n.sheetId === cxSheet.id);
+
+  // For each period: ordered Question nodes, each paired with its Response child.
+  const perPeriod = PERIODS.map(p => {
+    const questions = cxNodes
+      .filter(n => n.speechId === p.qId)
+      .sort((a, b) => a.order - b.order);
+    const pairs = questions.map(q => {
+      const resp = cxNodes.find(n => n.parentId === q.id && n.speechId === p.rId);
+      return { question: q.text, response: resp?.text ?? '' };
+    });
+    return { ...p, pairs };
+  });
+
+  const maxRows = Math.max(0, ...perPeriod.map(p => p.pairs.length));
   if (maxRows === 0) return cxXml;
 
   const makeCell = (ref: string, value: string, style: number): string =>
@@ -133,16 +142,15 @@ function patchCx(cxXml: string, round: Round): string {
   for (let i = 0; i < maxRows; i++) {
     const rowNum = FIRST_DATA_ROW + i;
     let cells = '';
-    for (const p of PERIODS) {
-      const row = round.cx[p.key][i];
-      if (!row) continue;
-      if (row.question.trim()) cells += makeCell(`${p.qCol}${rowNum}`, row.question, p.qStyle);
-      if (row.response.trim()) cells += makeCell(`${p.rCol}${rowNum}`, row.response, p.rStyle);
+    for (const p of perPeriod) {
+      const pair = p.pairs[i];
+      if (!pair) continue;
+      if (pair.question.trim()) cells += makeCell(`${p.qCol}${rowNum}`, pair.question, p.qStyle);
+      if (pair.response.trim()) cells += makeCell(`${p.rCol}${rowNum}`, pair.response, p.rStyle);
     }
     if (cells) insertedRows += `<row r="${rowNum}" spans="1:8">${cells}</row>`;
   }
 
-  // Insert new rows before </sheetData> and update the dimension.
   let out = cxXml.replace('</sheetData>', `${insertedRows}</sheetData>`);
   const lastRow = FIRST_DATA_ROW + maxRows - 1;
   out = out.replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:H${lastRow}"/>`);

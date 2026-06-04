@@ -7,9 +7,9 @@
 
 import { create } from 'zustand';
 import type { CommandId } from '@/lib/commands/registry';
-import type { Round, Sheet, ArgumentNode, Format, Role, Side, RoundMeta, NodeStatus, Scouting, CxPeriod, CxRow } from '@/lib/model/types';
+import type { Round, Sheet, ArgumentNode, Format, Role, Side, RoundMeta, NodeStatus, Scouting } from '@/lib/model/types';
 import { uid } from '@/lib/model/ids';
-import { emptyScouting, emptyCx, makeCxSheet } from '@/lib/model/normalize';
+import { emptyScouting, makeCxSheet } from '@/lib/model/normalize';
 import {
   addNode as treeAddNode,
   updateText,
@@ -84,10 +84,6 @@ export interface RoundActions {
   setInfoOpen(open: boolean): void;
 
   setScouting(patch: Partial<Scouting>): void;
-
-  addCxRow(period: CxPeriod): string;
-  updateCxRow(period: CxPeriod, id: string, patch: Partial<Omit<CxRow, 'id'>>): void;
-  removeCxRow(period: CxPeriod, id: string): void;
 
   startSpeech(speechId: string): void;
   tickSpeech(): void;
@@ -203,7 +199,6 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
       scouting: emptyScouting(),
       sheets: [makeCxSheet()],
       nodes: [],
-      cx: emptyCx(),
       timers: {
         activeSpeechId: null,
         speechRemaining: null,
@@ -463,34 +458,6 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   setScouting(patch) {
     if (!get().round) return;
     get()._commit('scouting', r => ({ ...r, scouting: { ...r.scouting, ...patch } }));
-  },
-
-  // ── addCxRow ───────────────────────────────────────────────────────────────
-  addCxRow(period) {
-    const id = uid('cx');
-    get()._commit(null, r => ({
-      ...r,
-      cx: { ...r.cx, [period]: [...r.cx[period], { id, question: '', response: '' }] },
-    }));
-    return id;
-  },
-
-  // ── updateCxRow ────────────────────────────────────────────────────────────
-  updateCxRow(period, id, patch) {
-    if (!get().round) return;
-    get()._commit(`cx:${id}`, r => ({
-      ...r,
-      cx: { ...r.cx, [period]: r.cx[period].map(row => row.id === id ? { ...row, ...patch } : row) },
-    }));
-  },
-
-  // ── removeCxRow ────────────────────────────────────────────────────────────
-  removeCxRow(period, id) {
-    if (!get().round) return;
-    get()._commit(null, r => ({
-      ...r,
-      cx: { ...r.cx, [period]: r.cx[period].filter(row => row.id !== id) },
-    }));
   },
 
   // ── startSpeech ────────────────────────────────────────────────────────────

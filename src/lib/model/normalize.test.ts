@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeRound, emptyScouting, emptyCx } from './normalize';
+import { normalizeRound, emptyScouting } from './normalize';
 import type { Round } from './types';
 
 function legacy(): any {
@@ -13,10 +13,9 @@ function legacy(): any {
 }
 
 describe('normalizeRound', () => {
-  it('adds scouting, cx, and a pinned CX sheet when missing', () => {
+  it('adds scouting and a pinned CX sheet when missing', () => {
     const r = normalizeRound(legacy()) as Round;
     expect(r.scouting).toEqual(emptyScouting());
-    expect(r.cx).toEqual(emptyCx());
     expect(r.sheets.some(s => s.kind === 'cx')).toBe(true);
   });
   it('defaults existing sheets to kind "flow"', () => {

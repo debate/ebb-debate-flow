@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FILE_VERSION, exportRoundJSON, importRoundJSON } from './io';
 import { makeFormatByKey } from '@/lib/format/presets';
-import { emptyScouting, emptyCx } from '@/lib/model/normalize';
+import { emptyScouting } from '@/lib/model/normalize';
 import type { Round } from '@/lib/model/types';
 
 // ─── Fixture ──────────────────────────────────────────────────────────────────
@@ -31,7 +31,6 @@ function makeRound(overrides: Partial<Round> = {}): Round {
         statuses: [],
       },
     ],
-    cx: emptyCx(),
     timers: {
       activeSpeechId: null,
       speechRemaining: null,

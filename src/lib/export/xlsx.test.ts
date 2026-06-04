@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { unzipSync, strFromU8 } from 'fflate';
 import { buildXlsx } from './xlsx';
 import type { Round } from '@/lib/model/types';
-import { emptyScouting, emptyCx } from '@/lib/model/normalize';
+import { emptyScouting } from '@/lib/model/normalize';
 
 const template = new Uint8Array(
   readFileSync(resolve(process.cwd(), 'public/templates/Flow.xlsx')),
@@ -22,7 +22,6 @@ function round(): Round {
     },
     meta: { tournament: 'States', roundLabel: 'R3' },
     scouting: emptyScouting(),
-    cx: emptyCx(),
     sheets: [{ id: 'sh', title: 'Politics DA', group: 'aff', order: 0 }],
     nodes: [
       { id: 'p', sheetId: 'sh', speechId: 's0', parentId: null, order: 0, text: 'Uniqueness', statuses: [] },
@@ -32,12 +31,19 @@ function round(): Round {
 }
 
 describe('buildXlsx', () => {
-  it('writes CX rows into the CX sheet', () => {
+  it('writes CX question/response nodes into the CX sheet', () => {
     const r = round();
-    r.cx['1AC'] = [{ id: 'a', question: 'Why plan?', response: 'Because.' }];
+    // Ensure a CX sheet exists
+    if (!r.sheets.some(s => s.kind === 'cx')) {
+      r.sheets.push({ id: 'cx', title: 'CX', group: 'aff', order: -1, kind: 'cx' });
+    }
+    const cxId = r.sheets.find(s => s.kind === 'cx')!.id;
+    r.nodes.push(
+      { id: 'q1', sheetId: cxId, speechId: 'cx-1ac-q', parentId: null, order: 0, text: 'Why plan?', statuses: [] },
+      { id: 'r1', sheetId: cxId, speechId: 'cx-1ac-r', parentId: 'q1', order: 0, text: 'Because.', statuses: [] },
+    );
     const bytes = buildXlsx(r, template);
     const files = unzipSync(bytes);
-    // Read all worksheet parts and join — we search for the written Q/A values
     const cxXml = Object.keys(files)
       .filter(k => k.startsWith('xl/worksheets/'))
       .map(k => strFromU8(files[k]))

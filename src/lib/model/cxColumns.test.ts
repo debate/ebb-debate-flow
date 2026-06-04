@@ -42,9 +42,8 @@ describe('columnsForSheet', () => {
         { id: 'f1', title: 'Aff', group: 'aff', order: 0, kind: 'flow' },
       ],
       nodes: [],
-      cx: {} as any,
       timers: { activeSpeechId: null, speechRemaining: null, running: false, prepRemaining: { aff: 0, neg: 0 }, prepRunning: null },
-    } as Round;
+    };
   }
   it('returns CX columns for a cx sheet', () => {
     expect(columnsForSheet(round(), 'cx1')).toBe(CX_COLUMNS);
