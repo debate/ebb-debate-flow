@@ -190,4 +190,113 @@ describe("buildXlsx", () => {
     expect(xml).toContain("Smith");
     expect(xml).toContain("Clear on impacts.");
   });
+
+  it("writes scouting tournament and judge into the Info sheet", () => {
+    const r = round();
+    r.scouting = {
+      ...emptyScouting(),
+      tournament: "TOC",
+      judge: "Lee",
+    };
+    const bytes = buildXlsx(r, template, DEFAULT_EXPORT_OPTIONS);
+    // Info is sheet1.xml in the Flow.xlsx template
+    const info = strFromU8(unzipSync(bytes)["xl/worksheets/sheet1.xml"]);
+    expect(info).toContain("TOC");
+    expect(info).toContain("Lee");
+  });
+
+  it("includes numbering prefixes when autoNumber is on", () => {
+    const r = round();
+    // Add a parent node in speech s0 and two child nodes so they get numbered 1. / 2.
+    r.nodes = [
+      {
+        id: "parent",
+        sheetId: "sh",
+        speechId: "s0",
+        parentId: null,
+        order: 0,
+        text: "Uniqueness",
+        statuses: [],
+        bold: false,
+      },
+      {
+        id: "child1",
+        sheetId: "sh",
+        speechId: "s1",
+        parentId: "parent",
+        order: 0,
+        text: "NonUnique",
+        statuses: [],
+        bold: false,
+      },
+      {
+        id: "child2",
+        sheetId: "sh",
+        speechId: "s1",
+        parentId: "parent",
+        order: 1,
+        text: "TurnCase",
+        statuses: [],
+        bold: false,
+      },
+    ];
+    const bytes = buildXlsx(r, template, { autoNumber: true, labelDrops: false });
+    const files = unzipSync(bytes);
+    // The generated flow sheet is the last appended worksheet
+    const flowXml = Object.keys(files)
+      .filter((k) => k.startsWith("xl/worksheets/sheet") && k.endsWith(".xml"))
+      .map((k) => strFromU8(files[k]))
+      .join("\n");
+    // Child nodes should have "1. " and "2. " prefixes embedded in inline string cells
+    expect(flowXml).toMatch(/>1\. NonUnique</);
+    expect(flowXml).toMatch(/>2\. TurnCase</);
+  });
+
+  it("omits numbering prefixes when autoNumber is off", () => {
+    const r = round();
+    r.nodes = [
+      {
+        id: "parent",
+        sheetId: "sh",
+        speechId: "s0",
+        parentId: null,
+        order: 0,
+        text: "Uniqueness",
+        statuses: [],
+        bold: false,
+      },
+      {
+        id: "child1",
+        sheetId: "sh",
+        speechId: "s1",
+        parentId: "parent",
+        order: 0,
+        text: "NonUnique",
+        statuses: [],
+        bold: false,
+      },
+      {
+        id: "child2",
+        sheetId: "sh",
+        speechId: "s1",
+        parentId: "parent",
+        order: 1,
+        text: "TurnCase",
+        statuses: [],
+        bold: false,
+      },
+    ];
+    const bytes = buildXlsx(r, template, { autoNumber: false, labelDrops: false });
+    const files = unzipSync(bytes);
+    const flowXml = Object.keys(files)
+      .filter((k) => k.startsWith("xl/worksheets/sheet") && k.endsWith(".xml"))
+      .map((k) => strFromU8(files[k]))
+      .join("\n");
+    // No "N. " numbering prefix should appear before the node texts
+    expect(flowXml).not.toMatch(/>1\. NonUnique</);
+    expect(flowXml).not.toMatch(/>2\. TurnCase</);
+    // The raw text should still appear (without prefix)
+    expect(flowXml).toContain("NonUnique");
+    expect(flowXml).toContain("TurnCase");
+  });
 });
