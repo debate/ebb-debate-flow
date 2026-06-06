@@ -5,6 +5,7 @@ import { unzipSync, strFromU8 } from "fflate";
 import { buildXlsx } from "./xlsx";
 import type { Round } from "@/lib/model/types";
 import { emptyScouting } from "@/lib/model/normalize";
+import { DEFAULT_EXPORT_OPTIONS } from "./options";
 
 const template = new Uint8Array(readFileSync(resolve(process.cwd(), "public/templates/Flow.xlsx")));
 
@@ -78,7 +79,7 @@ describe("buildXlsx", () => {
         bold: false,
       },
     );
-    const bytes = buildXlsx(r, template);
+    const bytes = buildXlsx(r, template, DEFAULT_EXPORT_OPTIONS);
     const files = unzipSync(bytes);
     const cxXml = Object.keys(files)
       .filter((k) => k.startsWith("xl/worksheets/"))
@@ -89,7 +90,7 @@ describe("buildXlsx", () => {
   });
 
   it("produces a valid zip with a populated sheet and patched Info", () => {
-    const bytes = buildXlsx(round(), template);
+    const bytes = buildXlsx(round(), template, DEFAULT_EXPORT_OPTIONS);
     const files = unzipSync(bytes);
 
     // calcChain dropped.
@@ -111,7 +112,7 @@ describe("buildXlsx", () => {
   });
 
   it("emits a well-formed workbook.xml root tag", () => {
-    const bytes = buildXlsx(round(), template);
+    const bytes = buildXlsx(round(), template, DEFAULT_EXPORT_OPTIONS);
     const workbookXml = strFromU8(unzipSync(bytes)["xl/workbook.xml"]);
     // The <workbook> start tag must be closed with ">" before any child element.
     const startTag = workbookXml.match(/<workbook\b[^>]*>/)?.[0] ?? "";
@@ -130,7 +131,7 @@ describe("buildXlsx", () => {
     // A flow sheet whose title collides case-insensitively with the hidden "AFF" scaffolding.
     r.sheets.push({ id: "a2", title: "Aff", group: "aff", order: 1 });
 
-    const wb = strFromU8(unzipSync(buildXlsx(r, template))["xl/workbook.xml"]);
+    const wb = strFromU8(unzipSync(buildXlsx(r, template, DEFAULT_EXPORT_OPTIONS))["xl/workbook.xml"]);
     const names = [...wb.matchAll(/<sheet name="([^"]*)"/g)].map((m) => m[1].toLowerCase());
 
     // Every tab name is unique (Excel treats names case-insensitively).
@@ -161,7 +162,7 @@ describe("buildXlsx", () => {
         bold: false,
       },
     ];
-    const wb = strFromU8(unzipSync(buildXlsx(r, template))["xl/workbook.xml"]);
+    const wb = strFromU8(unzipSync(buildXlsx(r, template, DEFAULT_EXPORT_OPTIONS))["xl/workbook.xml"]);
     const appended = [...wb.matchAll(/<sheet name="([^"]*)"/g)]
       .map((m) => m[1])
       .find((n) => !["Info", "AFF", "NEG", "Decisions", "CX"].includes(n))!;
@@ -182,7 +183,7 @@ describe("buildXlsx", () => {
       judge: "Pat Lee",
       decision: { vote: "aff", rfd: "Clear on impacts." },
     };
-    const bytes = buildXlsx(r, template);
+    const bytes = buildXlsx(r, template, DEFAULT_EXPORT_OPTIONS);
     const xml = strFromU8(unzipSync(bytes)["xl/worksheets/sheet1.xml"]);
     expect(xml).toContain("Westwood");
     expect(xml).toContain("Lincoln");

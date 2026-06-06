@@ -7,6 +7,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 import type { Round } from "@/lib/model/types";
 import { buildExportSheets } from "./cells";
 import { exportFilename, downloadBlob } from "./download";
+import type { ExportOptions } from "./options";
 
 const PAGE_W = 792; // US-letter landscape
 const PAGE_H = 612;
@@ -78,13 +79,13 @@ function drawSheet(
   }
 }
 
-export async function buildPdf(round: Round): Promise<Uint8Array> {
+export async function buildPdf(round: Round, opts: ExportOptions): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const boldFont = await doc.embedFont(StandardFonts.HelveticaBold);
   const speeches = round.format.speeches;
 
-  for (const es of buildExportSheets(round)) {
+  for (const es of buildExportSheets(round, opts)) {
     const page = doc.addPage([PAGE_W, PAGE_H]);
     page.drawText(es.sheet.title, {
       x: MARGIN,
@@ -101,8 +102,8 @@ export async function buildPdf(round: Round): Promise<Uint8Array> {
   return doc.save();
 }
 
-export async function downloadPdf(round: Round): Promise<void> {
-  const bytes = await buildPdf(round);
+export async function downloadPdf(round: Round, opts: ExportOptions): Promise<void> {
+  const bytes = await buildPdf(round, opts);
   const blob = new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
   downloadBlob(blob, exportFilename(round.role, round.createdAt, "pdf"));
 }

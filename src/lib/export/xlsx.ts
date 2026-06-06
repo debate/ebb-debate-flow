@@ -16,6 +16,7 @@ import {
   type NewSheet,
 } from "./xlsxParts";
 import { isoDate, exportFilename, downloadBlob } from "./download";
+import type { ExportOptions } from "./options";
 
 /** Resolve a sheet name → part filename (e.g. "AFF" → "sheet2.xml") using workbook + rels XML. */
 function resolveSheetPart(workbookXml: string, relsXml: string, sheetName: string): string {
@@ -212,7 +213,7 @@ function rebuildWorkbookXml(originalXml: string, newSheets: NewSheet[]): string 
 }
 
 /** Build the populated .xlsx bytes. Pure given the template bytes. */
-export function buildXlsx(round: Round, templateBytes: Uint8Array): Uint8Array {
+export function buildXlsx(round: Round, templateBytes: Uint8Array, opts: ExportOptions): Uint8Array {
   // First, strip revision data from the template to prevent corruption.
   const stripped = unzipSync(templateBytes);
   const stripRevision = (bytes: Uint8Array) => {
@@ -257,7 +258,7 @@ export function buildXlsx(round: Round, templateBytes: Uint8Array): Uint8Array {
   // template's dedicated CX sheet above (patchCx), so it must NOT also be
   // appended as a flow tab — doing so creates a duplicate "CX" name and
   // corrupts the workbook.
-  const exportSheets = buildExportSheets(round).filter((es) => es.sheet.kind !== "cx");
+  const exportSheets = buildExportSheets(round, opts).filter((es) => es.sheet.kind !== "cx");
   const baseSheetId = maxSheetId(workbookXml);
   const baseRid = maxRidNumber(relsXml);
   const basePart = nextPartNumber(files);
@@ -307,11 +308,11 @@ export function buildXlsx(round: Round, templateBytes: Uint8Array): Uint8Array {
 }
 
 /** Browser orchestrator: fetch template, build, download. */
-export async function downloadXlsx(round: Round): Promise<void> {
+export async function downloadXlsx(round: Round, opts: ExportOptions): Promise<void> {
   const res = await fetch("/templates/Flow.xlsx");
   if (!res.ok) throw new Error("Could not load the Excel template");
   const templateBytes = new Uint8Array(await res.arrayBuffer());
-  const bytes = buildXlsx(round, templateBytes);
+  const bytes = buildXlsx(round, templateBytes, opts);
   const blob = new Blob([bytes.buffer as ArrayBuffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });

@@ -3,6 +3,7 @@ import { PDFDocument } from "pdf-lib";
 import { buildPdf } from "./pdf";
 import type { Round } from "@/lib/model/types";
 import { emptyScouting } from "@/lib/model/normalize";
+import { DEFAULT_EXPORT_OPTIONS } from "./options";
 
 function round(sheets: number): Round {
   return {
@@ -51,7 +52,7 @@ function round(sheets: number): Round {
 
 describe("buildPdf", () => {
   it("produces a valid PDF with one page per sheet", async () => {
-    const bytes = await buildPdf(round(2));
+    const bytes = await buildPdf(round(2), DEFAULT_EXPORT_OPTIONS);
     expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
     const doc = await PDFDocument.load(bytes);
     expect(doc.getPageCount()).toBe(2);
