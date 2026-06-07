@@ -1,5 +1,6 @@
 import type { Round } from "@/lib/model/types";
 import { normalizeRound } from "@/lib/model/normalize";
+import { uid } from "@/lib/model/ids";
 
 // ─── Version ──────────────────────────────────────────────────────────────────
 
@@ -75,7 +76,9 @@ export function importRoundJSON(text: string): Round {
     throw new Error("Invalid round file");
   }
 
-  return normalizeRound(round as Round);
+  const normalized = normalizeRound(round as Round);
+  const now = Date.now();
+  return { ...normalized, id: uid("round"), createdAt: now, updatedAt: now, deletedAt: null };
 }
 
 // ─── Browser helpers ──────────────────────────────────────────────────────────

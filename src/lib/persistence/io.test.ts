@@ -68,11 +68,22 @@ describe("exportRoundJSON", () => {
 // ─── importRoundJSON ──────────────────────────────────────────────────────────
 
 describe("importRoundJSON", () => {
-  it("round-trips: exportRoundJSON then importRoundJSON gives deep-equal Round", () => {
+  it("round-trips: exportRoundJSON then importRoundJSON preserves structure (except identity)", () => {
     const round = makeRound();
     const json = exportRoundJSON(round);
     const imported = importRoundJSON(json);
-    expect(imported).toEqual(normalizeRound(structuredClone(round)));
+    const normalized = normalizeRound(structuredClone(round));
+    // Import assigns fresh identity, so verify structure is preserved
+    expect(imported.role).toBe(normalized.role);
+    expect(imported.format).toEqual(normalized.format);
+    expect(imported.sheets).toEqual(normalized.sheets);
+    expect(imported.nodes).toEqual(normalized.nodes);
+    expect(imported.groups).toEqual(normalized.groups);
+    expect(imported.timers).toEqual(normalized.timers);
+    expect(imported.scouting).toEqual(normalized.scouting);
+    // Verify identity is fresh
+    expect(imported.id).not.toBe(round.id);
+    expect(imported.deletedAt).toBeNull();
   });
 
   it("preserves bold through export → import", () => {
@@ -179,7 +190,7 @@ describe("importRoundJSON", () => {
     expect(exportRoundJSON(makeRound())).toContain('"version": 2');
   });
 
-  it("round-trips a rich round losslessly", () => {
+  it("round-trips a rich round losslessly (except identity)", () => {
     const r = normalizeRound(makeRound({
       scouting: { ...emptyScouting(), tournament: "TOC", judge: "Lee", round: "Octos" },
       groups: [{ id: "g1", sheetId: "sheet_001", label: "Bundle", memberIds: ["node_001"] }],
@@ -191,7 +202,15 @@ describe("importRoundJSON", () => {
       ],
     }));
     const back = importRoundJSON(exportRoundJSON(r));
-    expect(back).toEqual(r);
+    // Identity is freshened on import, so compare everything else
+    expect(back.role).toBe(r.role);
+    expect(back.format).toEqual(r.format);
+    expect(back.sheets).toEqual(r.sheets);
+    expect(back.nodes).toEqual(r.nodes);
+    expect(back.groups).toEqual(r.groups);
+    expect(back.timers).toEqual(r.timers);
+    expect(back.scouting).toEqual(r.scouting);
+    expect(back.deletedAt).toBeNull();
   });
 
   it("migrates a legacy v1 file, folding meta into scouting", () => {
@@ -210,18 +229,52 @@ describe("importRoundJSON", () => {
 // jsdom provides File and Blob polyfills; File.text() is available in jsdom.
 
 describe("readRoundFile", () => {
-  it("reads a File containing a valid exported round and returns a deep-equal Round", async () => {
+  it("reads a File containing a valid exported round and returns a round with fresh identity", async () => {
     const { readRoundFile } = await import("./io");
     const round = makeRound({ id: "round_file_test" });
     const json = exportRoundJSON(round);
     const file = new File([json], "debate-flow-aff-20240101.json", { type: "application/json" });
     const imported = await readRoundFile(file);
-    expect(imported).toEqual(normalizeRound(structuredClone(round)));
+    const normalized = normalizeRound(structuredClone(round));
+    // Verify structure is preserved
+    expect(imported.role).toBe(normalized.role);
+    expect(imported.format).toEqual(normalized.format);
+    expect(imported.sheets).toEqual(normalized.sheets);
+    expect(imported.nodes).toEqual(normalized.nodes);
+    // Verify identity is fresh
+    expect(imported.id).not.toBe("round_file_test");
+    expect(imported.deletedAt).toBeNull();
   });
 
   it("rejects when file contains invalid JSON", async () => {
     const { readRoundFile } = await import("./io");
     const file = new File(["garbage { not json"], "bad.json", { type: "application/json" });
     await expect(readRoundFile(file)).rejects.toThrow("Invalid JSON");
+  });
+});
+
+// ─── importRoundJSON assigns fresh identity ────────────────────────────────────
+
+describe("importRoundJSON assigns a fresh identity", () => {
+  it("changes id, refreshes createdAt, clears deletedAt", () => {
+    const original = {
+      version: 2,
+      round: {
+        id: "orig-id",
+        createdAt: 100,
+        updatedAt: 100,
+        deletedAt: 555,
+        role: "aff",
+        format: { id: "f", name: "T", speeches: [], prepSeconds: { aff: 240, neg: 240 } },
+        scouting: { aff: { first: { first: "", last: "" }, second: { first: "", last: "" } }, neg: { first: { first: "", last: "" }, second: { first: "", last: "" } } },
+        sheets: [],
+        nodes: [],
+        groups: [],
+        timers: { activeSpeechId: null, speechRemaining: null, running: false, prepRemaining: { aff: 240, neg: 240 }, prepRunning: null },
+      },
+    };
+    const r = importRoundJSON(JSON.stringify(original));
+    expect(r.id).not.toBe("orig-id");
+    expect(r.deletedAt ?? null).toBeNull();
   });
 });
