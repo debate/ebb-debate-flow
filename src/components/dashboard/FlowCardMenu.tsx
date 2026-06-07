@@ -55,7 +55,7 @@ export default function FlowCardMenu({ id, onViewDetails, onChanged }: FlowCardM
           data-testid={`kebab-${id}`}
           aria-label="Flow actions"
           onClick={(e) => e.stopPropagation()}
-          className="absolute top-3.5 right-3.5 hidden h-7 w-7 items-center justify-center rounded-md bg-zinc-100 text-zinc-500 group-hover:flex hover:bg-zinc-200"
+          className="absolute top-3.5 right-3.5 flex h-7 w-7 items-center justify-center rounded-md bg-zinc-100 text-zinc-500 opacity-0 group-hover:opacity-100 hover:bg-zinc-200"
         >
           ⋯
         </button>
