@@ -185,6 +185,21 @@ describe("FlowGrid", () => {
     expect(badge).not.toBeNull();
   });
 
+  it("renders no drop markers when straightDown is on", () => {
+    const { sheetId } = setupScenario();
+    useRoundStore.setState({ straightDown: true, labelDrops: true });
+
+    render(<FlowGrid sheetId={sheetId} />);
+
+    // The dropped cell should NOT carry the .cell-drop class.
+    const cell = screen.getByText("Standards").closest("td");
+    expect(cell!.classList.contains("cell-drop")).toBe(false);
+    // No drop badge anywhere in the DOM.
+    expect(document.querySelector(".badge-drop")).toBeNull();
+
+    useRoundStore.setState({ straightDown: false });
+  });
+
   // ── Selected cell ──────────────────────────────────────────────────────────
 
   it("highlights the selected cell with .cell-sel", () => {

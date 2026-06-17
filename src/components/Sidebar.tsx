@@ -28,6 +28,7 @@ export default function Sidebar() {
   const renamingSheetId = useRoundStore((s) => s.renamingSheetId);
   const setRenamingSheet = useRoundStore((s) => s.setRenamingSheet);
   const labelDrops = useRoundStore((s) => s.labelDrops);
+  const straightDown = useRoundStore((s) => s.straightDown);
   const removeSheet = useRoundStore((s) => s.removeSheet);
 
   if (!round) return null;
@@ -81,7 +82,7 @@ export default function Sidebar() {
                   <SheetRow
                     key={sheet.id}
                     sheet={sheet}
-                    dropCount={labelDrops ? selectSheetDropCount(round, sheet.id) : 0}
+                    dropCount={labelDrops && !straightDown ? selectSheetDropCount(round, sheet.id) : 0}
                     active={sheet.id === activeSheetId}
                     onSelect={() => setActiveSheet(sheet.id)}
                     isRenaming={sheet.id === renamingSheetId}

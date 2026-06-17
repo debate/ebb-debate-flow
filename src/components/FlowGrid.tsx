@@ -35,6 +35,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
   const setSelection = useRoundStore((s) => s.setSelection);
   const addNode = useRoundStore((s) => s.addNode);
   const setMode = useRoundStore((s) => s.setMode);
+  const straightDown = useRoundStore((s) => s.straightDown);
 
   const sheets = useRoundStore((s) => s.round?.sheets ?? []);
   const sheet = sheets.find((s) => s.id === sheetId);
@@ -45,7 +46,8 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
   const speeches = isCx ? CX_COLUMNS : sheet ? columnsForSheet(format, sheet) : format.speeches;
 
   const sheetNodes = nodes.filter((n) => n.sheetId === sheetId);
-  const droppedIds = isCx ? new Set<string>() : new Set(detectDrops(nodes, format, sheetId));
+  const droppedIds =
+    isCx || straightDown ? new Set<string>() : new Set(detectDrops(nodes, format, sheetId));
 
   // ── Compute group header info ──────────────────────────────────────────────
   // Build "top header" cells: runs of same non-empty group get a colSpan header;
