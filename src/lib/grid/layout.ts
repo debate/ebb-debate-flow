@@ -1,8 +1,15 @@
 /**
+ * MIGRATION ONLY: assigns initial rows to legacy tree-shaped rounds.
+ * Not a render path. Retained so the one-shot Dexie migration can compute
+ * `(startRow, rowSpan, col)` from the legacy `parentId`+`order` tree and
+ * persist each node's `row` coordinate.
+ *
  * Elastic flow layout: turns the argument tree into (row, col, rowSpan) placements.
  * Extracted from FlowGrid so exporters reuse the exact on-screen placement.
  *
  * ASSUMPTION: responses always live in a LATER column than their parent.
+ * READS the legacy `order` field — callers must pass pre-migration nodes
+ * (cast if necessary) that carry `order`.
  */
 
 import type { ArgumentNode, Speech } from "@/lib/model/types";

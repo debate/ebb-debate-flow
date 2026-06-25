@@ -11,7 +11,7 @@ function makeNode(
         sheetId: "sheet1",
         speechId: "speech1",
         parentId: "parent1",
-        order: 0,
+        row: 0,
         text: "",
         statuses: [],
         bold: false,
@@ -30,15 +30,15 @@ describe("numberFor", () => {
 
     it("returns 1 for the only child", () => {
         const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", parentId: "p", order: 0 }),
+            makeNode({ id: "a", parentId: "p", row: 0 }),
         ];
         expect(numberFor(nodes, "a")).toBe(1);
     });
 
     it("returns 1 for the first of two siblings and 2 for the second", () => {
         const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", parentId: "p", order: 0 }),
-            makeNode({ id: "b", parentId: "p", order: 1 }),
+            makeNode({ id: "a", parentId: "p", row: 0 }),
+            makeNode({ id: "b", parentId: "p", row: 1 }),
         ];
         expect(numberFor(nodes, "a")).toBe(1);
         expect(numberFor(nodes, "b")).toBe(2);
@@ -47,8 +47,8 @@ describe("numberFor", () => {
     it("numbers are based on order not insertion sequence", () => {
         // 'b' has lower order so it is sibling #1, 'a' is #2
         const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", parentId: "p", order: 1 }),
-            makeNode({ id: "b", parentId: "p", order: 0 }),
+            makeNode({ id: "a", parentId: "p", row: 1 }),
+            makeNode({ id: "b", parentId: "p", row: 0 }),
         ];
         expect(numberFor(nodes, "b")).toBe(1);
         expect(numberFor(nodes, "a")).toBe(2);
@@ -56,8 +56,8 @@ describe("numberFor", () => {
 
     it("does not count siblings with a different parentId", () => {
         const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", parentId: "p1", order: 0 }),
-            makeNode({ id: "b", parentId: "p2", order: 0 }),
+            makeNode({ id: "a", parentId: "p1", row: 0 }),
+            makeNode({ id: "b", parentId: "p2", row: 0 }),
         ];
         // 'a' is the only child of p1 → should be 1
         expect(numberFor(nodes, "a")).toBe(1);
@@ -65,16 +65,16 @@ describe("numberFor", () => {
 
     it("does not count siblings with a different sheetId", () => {
         const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", parentId: "p", sheetId: "sheet1", order: 0 }),
-            makeNode({ id: "b", parentId: "p", sheetId: "sheet2", order: 1 }),
+            makeNode({ id: "a", parentId: "p", sheetId: "sheet1", row: 0 }),
+            makeNode({ id: "b", parentId: "p", sheetId: "sheet2", row: 1 }),
         ];
         expect(numberFor(nodes, "a")).toBe(1);
     });
 
     it("does not count siblings with a different speechId", () => {
         const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", parentId: "p", speechId: "speech1", order: 0 }),
-            makeNode({ id: "b", parentId: "p", speechId: "speech2", order: 1 }),
+            makeNode({ id: "a", parentId: "p", speechId: "speech1", row: 0 }),
+            makeNode({ id: "b", parentId: "p", speechId: "speech2", row: 1 }),
         ];
         expect(numberFor(nodes, "a")).toBe(1);
     });
@@ -84,14 +84,14 @@ describe("numberFor", () => {
             makeNode({
                 id: "a",
                 parentId: "p",
-                order: 0,
+                row: 0,
                 numberOverride: null,
             }),
-            makeNode({ id: "b", parentId: "p", order: 1, numberOverride: 5 }),
+            makeNode({ id: "b", parentId: "p", row: 1, numberOverride: 5 }),
             makeNode({
                 id: "c",
                 parentId: "p",
-                order: 2,
+                row: 2,
                 numberOverride: null,
             }),
         ];
@@ -102,11 +102,11 @@ describe("numberFor", () => {
 
     it("applies an override at position 0, then increments", () => {
         const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", parentId: "p", order: 0, numberOverride: 10 }),
+            makeNode({ id: "a", parentId: "p", row: 0, numberOverride: 10 }),
             makeNode({
                 id: "b",
                 parentId: "p",
-                order: 1,
+                row: 1,
                 numberOverride: null,
             }),
         ];
@@ -116,7 +116,7 @@ describe("numberFor", () => {
 
     it("returns null when nodeId is not found", () => {
         const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", parentId: "p", order: 0 }),
+            makeNode({ id: "a", parentId: "p", row: 0 }),
         ];
         expect(numberFor(nodes, "nonexistent")).toBeNull();
     });
@@ -131,7 +131,7 @@ describe("numberFor", () => {
             sheetId: "sheet1",
             speechId: "speech1",
             parentId: "p",
-            order: 0,
+            row: 0,
             text: "",
             statuses: [],
             bold: false,
@@ -143,10 +143,10 @@ describe("numberFor", () => {
     it("sibling counter does not bleed across different parent groups", () => {
         // p1 has 3 children, p2 has 1 child; p2's child should still be #1
         const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", parentId: "p1", order: 0 }),
-            makeNode({ id: "b", parentId: "p1", order: 1 }),
-            makeNode({ id: "c", parentId: "p1", order: 2 }),
-            makeNode({ id: "d", parentId: "p2", order: 0 }),
+            makeNode({ id: "a", parentId: "p1", row: 0 }),
+            makeNode({ id: "b", parentId: "p1", row: 1 }),
+            makeNode({ id: "c", parentId: "p1", row: 2 }),
+            makeNode({ id: "d", parentId: "p2", row: 0 }),
         ];
         expect(numberFor(nodes, "d")).toBe(1);
     });

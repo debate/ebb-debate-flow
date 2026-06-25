@@ -12,7 +12,7 @@ import type { ArgumentNode } from "@/lib/model/types";
  * Rules:
  * - Root nodes (parentId === null) are unnumbered → returns null.
  * - Siblings are all nodes sharing the same parentId, sheetId, and speechId,
- *   sorted ascending by order.
+ *   sorted ascending by row.
  * - A running counter starts at 0. For each sibling in order:
  *     - If numberOverride is a number → counter = numberOverride (break point).
  *     - Otherwise → counter = counter + 1.
@@ -35,7 +35,7 @@ export function numberFor(
                 n.sheetId === target.sheetId &&
                 n.speechId === target.speechId,
         )
-        .sort((a, b) => a.order - b.order);
+        .sort((a, b) => a.row - b.row);
 
     let counter = 0;
     for (const sibling of siblings) {

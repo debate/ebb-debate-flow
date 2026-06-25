@@ -20,7 +20,7 @@ function makeNode(
         sheetId: "sheet1",
         speechId: "speech1",
         parentId: null,
-        order: 0,
+        row: 0,
         text: "",
         statuses: [],
         bold: false,
@@ -56,8 +56,8 @@ describe("firstChildOf", () => {
     it("returns the child with minimum order across speeches", () => {
         const nodes = [
             makeNode({ id: "p" }),
-            makeNode({ id: "c2", parentId: "p", speechId: "spB", order: 2 }),
-            makeNode({ id: "c1", parentId: "p", speechId: "spC", order: 1 }),
+            makeNode({ id: "c2", parentId: "p", speechId: "spB", row: 2 }),
+            makeNode({ id: "c1", parentId: "p", speechId: "spC", row: 1 }),
         ];
         expect(firstChildOf(nodes, "p", "sheet1")?.id).toBe("c1");
     });
@@ -69,9 +69,9 @@ describe("firstChildOf", () => {
                 id: "other",
                 parentId: "p",
                 sheetId: "sheet2",
-                order: 0,
+                row: 0,
             }),
-            makeNode({ id: "c", parentId: "p", sheetId: "sheet1", order: 5 }),
+            makeNode({ id: "c", parentId: "p", sheetId: "sheet1", row: 5 }),
         ];
         expect(firstChildOf(nodes, "p", "sheet1")?.id).toBe("c");
     });
@@ -86,21 +86,21 @@ describe("firstChildOf", () => {
 
 describe("nodeAboveInColumn", () => {
     it("returns the node with next-lower order in same column", () => {
-        const a = makeNode({ id: "a", order: 0 });
-        const b = makeNode({ id: "b", order: 1 });
-        const c = makeNode({ id: "c", order: 2 });
+        const a = makeNode({ id: "a", row: 0 });
+        const b = makeNode({ id: "b", row: 1 });
+        const c = makeNode({ id: "c", row: 2 });
         expect(nodeAboveInColumn([a, b, c], c)?.id).toBe("b");
     });
 
     it("returns null at the top of the column", () => {
-        const a = makeNode({ id: "a", order: 0 });
+        const a = makeNode({ id: "a", row: 0 });
         expect(nodeAboveInColumn([a], a)).toBeNull();
     });
 
     it("ignores nodes in other columns", () => {
-        const a = makeNode({ id: "a", order: 0 });
-        const other = makeNode({ id: "o", order: 1, speechId: "sp2" });
-        const c = makeNode({ id: "c", order: 5 });
+        const a = makeNode({ id: "a", row: 0 });
+        const other = makeNode({ id: "o", row: 1, speechId: "sp2" });
+        const c = makeNode({ id: "c", row: 5 });
         expect(nodeAboveInColumn([a, other, c], c)?.id).toBe("a");
     });
 });
@@ -109,20 +109,20 @@ describe("nodeAboveInColumn", () => {
 
 describe("nodeBelowInColumn", () => {
     it("returns the node with next-higher order in same column", () => {
-        const a = makeNode({ id: "a", order: 0 });
-        const b = makeNode({ id: "b", order: 1 });
-        const c = makeNode({ id: "c", order: 2 });
+        const a = makeNode({ id: "a", row: 0 });
+        const b = makeNode({ id: "b", row: 1 });
+        const c = makeNode({ id: "c", row: 2 });
         expect(nodeBelowInColumn([a, b, c], a)?.id).toBe("b");
     });
 
     it("returns null at the bottom of the column", () => {
-        const a = makeNode({ id: "a", order: 0 });
+        const a = makeNode({ id: "a", row: 0 });
         expect(nodeBelowInColumn([a], a)).toBeNull();
     });
 
     it("ignores other sheets", () => {
-        const a = makeNode({ id: "a", order: 0 });
-        const other = makeNode({ id: "o", order: 1, sheetId: "sheet2" });
+        const a = makeNode({ id: "a", row: 0 });
+        const other = makeNode({ id: "o", row: 1, sheetId: "sheet2" });
         expect(nodeBelowInColumn([a, other], a)).toBeNull();
     });
 });

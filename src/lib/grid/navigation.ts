@@ -32,7 +32,7 @@ export function firstChildOf(
         (n) => n.parentId === nodeId && n.sheetId === sheetId,
     );
     if (children.length === 0) return null;
-    return children.reduce((best, n) => (n.order < best.order ? n : best));
+    return children.reduce((best, n) => (n.row < best.row ? n : best));
 }
 
 /**
@@ -47,10 +47,10 @@ export function nodeAboveInColumn(
         (n) =>
             n.sheetId === node.sheetId &&
             n.speechId === node.speechId &&
-            n.order < node.order,
+            n.row < node.row,
     );
     if (above.length === 0) return null;
-    return above.reduce((best, n) => (n.order > best.order ? n : best));
+    return above.reduce((best, n) => (n.row > best.row ? n : best));
 }
 
 /**
@@ -65,10 +65,10 @@ export function nodeBelowInColumn(
         (n) =>
             n.sheetId === node.sheetId &&
             n.speechId === node.speechId &&
-            n.order > node.order,
+            n.row > node.row,
     );
     if (below.length === 0) return null;
-    return below.reduce((best, n) => (n.order < best.order ? n : best));
+    return below.reduce((best, n) => (n.row < best.row ? n : best));
 }
 
 /**

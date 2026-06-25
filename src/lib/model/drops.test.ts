@@ -18,7 +18,7 @@ function makeNode(
 ): ArgumentNode {
     return {
         parentId: null,
-        order: 0,
+        row: 0,
         text: "",
         statuses: [],
         bold: false,
@@ -68,13 +68,13 @@ describe("detectDrops", () => {
             id: "arg2",
             sheetId: SHEET_A,
             speechId: "sp-2ac",
-            order: 1,
+            row: 1,
         });
         const arg3 = makeNode({
             id: "arg3",
             sheetId: SHEET_A,
             speechId: "sp-2ac",
-            order: 2,
+            row: 2,
         });
 
         // Block answers arg1 and arg2, but NOT arg3
@@ -157,7 +157,7 @@ describe("detectDrops", () => {
             id: "arg2",
             sheetId: SHEET_B,
             speechId: "sp-2ac",
-            order: 1,
+            row: 1,
         });
 
         const nodes = [arg1, blk1, arg2];
@@ -230,13 +230,13 @@ describe("detectDrops", () => {
             id: "arg2",
             sheetId: SHEET_A,
             speechId: "sp-2ac",
-            order: 1,
+            row: 1,
         });
         const arg3 = makeNode({
             id: "arg3",
             sheetId: SHEET_A,
             speechId: "sp-2ac",
-            order: 2,
+            row: 2,
         });
         const blk1 = makeNode({
             id: "blk1",
