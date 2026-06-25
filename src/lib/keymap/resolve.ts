@@ -1,10 +1,10 @@
 /**
  * Chord resolution: turning KeyboardEvent-like objects into canonical chord
- * strings and resolving them against a keymap.
+ * strings and resolving them against a flat modeless keymap.
  */
 
 import type { CommandId } from "@/lib/commands/registry";
-import type { Chord, Keymap, Mode } from "./types";
+import type { Chord, Keymap } from "./types";
 
 interface KeyEventLike {
     key: string;
@@ -41,13 +41,12 @@ export function eventToChord(e: KeyEventLike): Chord {
 }
 
 /**
- * Returns the CommandId bound to this event in the given mode, or null.
+ * Returns the CommandId bound to this chord in the flat keymap, or null.
  */
 export function resolveCommand(
     keymap: Keymap,
-    mode: Mode,
     e: KeyEventLike,
 ): CommandId | null {
     const chord = eventToChord(e);
-    return keymap.bindings[mode]?.[chord] ?? null;
+    return keymap.bindings[chord] ?? null;
 }

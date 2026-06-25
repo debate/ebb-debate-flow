@@ -56,8 +56,7 @@ export interface RoundState {
         speechId: string;
         row: number;
     } | null;
-    keymapName: "default" | "vim";
-    /** CommandId → custom chord (normal mode), overriding the preset binding. */
+    /** CommandId → custom chord, overriding the preset binding. */
     keymapOverrides: Record<string, string>;
     autoNumber: boolean;
     labelDrops: boolean;
@@ -131,7 +130,6 @@ export interface RoundActions {
     /** Internal: drop selection/activeSheet if they point at something now gone. */
     _reconcileAfterHistory(): void;
 
-    setKeymapName(name: "default" | "vim"): void;
     setKeymapOverride(commandId: CommandId, chord: string): void;
     clearKeymapOverride(commandId: CommandId): void;
     setAutoNumber(v: boolean): void;
@@ -154,14 +152,12 @@ export type RoundStore = RoundState & RoundActions;
 const KEYMAP_SETTINGS_KEY = "df-keymap-settings";
 
 interface KeymapSettings {
-    keymapName: "default" | "vim";
     keymapOverrides: Record<string, string>;
 }
 
 /** Loads persisted keymap settings from localStorage (SSR-safe). */
 function loadKeymapSettings(): KeymapSettings {
     const fallback: KeymapSettings = {
-        keymapName: "default",
         keymapOverrides: {},
     };
     if (typeof window === "undefined") return fallback;
@@ -169,14 +165,7 @@ function loadKeymapSettings(): KeymapSettings {
         const raw = window.localStorage.getItem(KEYMAP_SETTINGS_KEY);
         if (!raw) return fallback;
         const parsed = JSON.parse(raw) as Partial<KeymapSettings>;
-        const validPresets = ["default", "vim"] as const;
-        const keymapName = validPresets.includes(
-            parsed.keymapName as (typeof validPresets)[number],
-        )
-            ? (parsed.keymapName as (typeof validPresets)[number])
-            : fallback.keymapName;
         return {
-            keymapName,
             keymapOverrides: parsed.keymapOverrides ?? fallback.keymapOverrides,
         };
     } catch {
@@ -250,7 +239,6 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     lastCommitKey: null,
     activeSheetId: null,
     selection: null,
-    keymapName: initialKeymapSettings.keymapName,
     keymapOverrides: initialKeymapSettings.keymapOverrides,
     autoNumber: initialDisplaySettings.autoNumber,
     labelDrops: initialDisplaySettings.labelDrops,
@@ -702,21 +690,11 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         });
     },
 
-    // ── setKeymapName ──────────────────────────────────────────────────────────
-    setKeymapName(name) {
-        set({ keymapName: name });
-        saveKeymapSettings({
-            keymapName: name,
-            keymapOverrides: get().keymapOverrides,
-        });
-    },
-
     // ── setKeymapOverride ──────────────────────────────────────────────────────
     setKeymapOverride(commandId, chord) {
         const overrides = { ...get().keymapOverrides, [commandId]: chord };
         set({ keymapOverrides: overrides });
         saveKeymapSettings({
-            keymapName: get().keymapName,
             keymapOverrides: overrides,
         });
     },
@@ -727,7 +705,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         delete overrides[commandId];
         set({ keymapOverrides: overrides });
         saveKeymapSettings({
-            keymapName: get().keymapName,
+            keymapOverrides: overrides,
             keymapOverrides: overrides,
         });
     },

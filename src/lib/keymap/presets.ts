@@ -1,7 +1,9 @@
 /**
- * Built-in keymap presets: default, vim.
+ * Single flat modeless keymap preset.
  *
  * Chord strings are canonical (see resolve.ts / eventToChord).
+ * There is no vim/move mode layer — one binding map for everything.
+ * Grab-move is handled by a transient override in useKeymap.
  */
 
 import type { CommandId } from "@/lib/commands/registry";
@@ -20,109 +22,70 @@ const SHEET_JUMPS: Record<Chord, CommandId> = {
     "Ctrl+9": "sheet.jump9",
 };
 
-/** Chords shared across all presets' normal mode. */
-const COMMON_NORMAL: Record<Chord, CommandId> = {
-    "Ctrl+b": "format.toggleBold",
-    "Ctrl+z": "edit.undo",
-    "Ctrl+Shift+z": "edit.redo",
-    "]": "sheet.next",
-    "[": "sheet.prev",
-    "Ctrl+k": "sheet.quickSwitch",
-    "Ctrl+a": "sheet.newAff",
-    "Ctrl+n": "sheet.newNeg",
-    "Ctrl+r": "sheet.rename",
-    "Ctrl+,": "settings.open",
-    "?": "help.open",
-    ...SHEET_JUMPS,
+/**
+ * The single flat keymap. All navigation, creation, and utility chords live
+ * here. During a grab-move (moveSource !== null), Enter/Escape are temporarily
+ * overridden to move.commit / move.cancel by the useKeymap hook.
+ */
+export const FLAT_KEYMAP: Keymap = {
+    name: "default",
+    bindings: {
+        // ── Navigation ────────────────────────────────────────────────────────
+        ArrowLeft: "move.left",
+        ArrowDown: "move.down",
+        ArrowUp: "move.up",
+        ArrowRight: "move.right",
+        Tab: "move.right",
+        "Shift+Tab": "move.left",
+
+        // ── Node creation ─────────────────────────────────────────────────────
+        Enter: "node.sibling",
+        "Shift+Enter": "node.response",
+
+        // ── Row operations ────────────────────────────────────────────────────
+        "Ctrl+Backspace": "row.delete",
+
+        // ── Cell operations ───────────────────────────────────────────────────
+        Delete: "cell.clear",
+        "Ctrl+Shift+Backspace": "node.deleteSubtree",
+
+        // ── Grab move ─────────────────────────────────────────────────────────
+        "Ctrl+m": "move.grab",
+
+        // ── Edit ──────────────────────────────────────────────────────────────
+        "Ctrl+z": "edit.undo",
+        "Ctrl+Shift+z": "edit.redo",
+
+        // ── Status / format ───────────────────────────────────────────────────
+        "Ctrl+b": "format.toggleBold",
+        "Ctrl+Shift+x": "status.toggleConceded",
+        "Ctrl+e": "status.toggleExtended",
+
+        // ── Sheets ────────────────────────────────────────────────────────────
+        "]": "sheet.next",
+        "[": "sheet.prev",
+        "Ctrl+k": "sheet.quickSwitch",
+        "Ctrl+a": "sheet.newAff",
+        "Ctrl+n": "sheet.newNeg",
+        "Ctrl+r": "sheet.rename",
+        "Ctrl+,": "settings.open",
+        "?": "help.open",
+        ...SHEET_JUMPS,
+    },
 };
 
-// ─── DEFAULT ──────────────────────────────────────────────────────────────────
-//
-// Always-insert mode: cells are editable immediately on selection, no modality.
-// Arrow keys navigate between cells even while a cell is focused.
-// Ctrl+ shortcuts work from anywhere.
-
 /**
- * Move mode (keyboard grab & move): arrows steer the target cursor spatially,
- * Enter drops, Escape cancels. Shared across presets; vim adds hjkl.
+ * Grab-move override bindings. When moveSource is active, these chords take
+ * priority over the flat keymap for the duration of the grab.
  */
-const MOVE_COMMON: Record<Chord, CommandId> = {
-    ArrowLeft: "move.left",
-    ArrowDown: "move.down",
-    ArrowUp: "move.up",
-    ArrowRight: "move.right",
+export const GRAB_BINDINGS: Record<Chord, CommandId> = {
     Enter: "move.commit",
     Escape: "move.cancel",
 };
 
-export const DEFAULT_KEYMAP: Keymap = {
-    name: "default",
-    bindings: {
-        normal: {
-            ArrowLeft: "move.left",
-            ArrowDown: "move.down",
-            ArrowUp: "move.up",
-            ArrowRight: "move.right",
-            Enter: "node.addAnswer",
-            "Shift+Enter": "node.answerAcross",
-            "Alt+Enter": "arg.newRoot",
-            Tab: "nav.nextSpeech",
-            "Shift+Tab": "nav.prevSpeech",
-            "Ctrl+Shift+x": "status.toggleConceded",
-            "Ctrl+e": "status.toggleExtended",
-            // Bare letters type into always-editable cells, so grab is a chord.
-            "Ctrl+m": "move.grab",
-            Delete: "node.delete",
-            ...COMMON_NORMAL,
-        },
-        insert: {},
-        move: MOVE_COMMON,
-    },
-};
-
-// ─── VIM ──────────────────────────────────────────────────────────────────────
-
-export const VIM_KEYMAP: Keymap = {
-    name: "vim",
-    bindings: {
-        normal: {
-            h: "move.left",
-            j: "move.down",
-            k: "move.up",
-            l: "move.right",
-            i: "edit.enter",
-            Enter: "edit.enter",
-            o: "node.addAnswer",
-            a: "node.answerAcross",
-            O: "arg.newRoot",
-            c: "status.toggleConceded",
-            e: "status.toggleExtended",
-            x: "node.delete",
-            m: "move.grab",
-            "g r": "sheet.rename",
-            ...COMMON_NORMAL,
-        },
-        insert: { Escape: "edit.exit", Enter: "node.addAnswer", Tab: "nav.nextSpeech", "Shift+Tab": "nav.prevSpeech" },
-        move: {
-            h: "move.left",
-            j: "move.down",
-            k: "move.up",
-            l: "move.right",
-            ...MOVE_COMMON,
-        },
-    },
-};
-
 // ─── Registry ─────────────────────────────────────────────────────────────────
 
-export type KeymapName = "default" | "vim";
-
-export const KEYMAPS: Record<KeymapName, Keymap> = {
-    default: DEFAULT_KEYMAP,
-    vim: VIM_KEYMAP,
-};
-
-/** Returns the preset keymap for a name. */
-export function getPresetKeymap(name: KeymapName): Keymap {
-    return KEYMAPS[name];
+/** Returns the flat preset keymap. */
+export function getPresetKeymap(): Keymap {
+    return FLAT_KEYMAP;
 }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { eventToChord, resolveCommand } from "./resolve";
-import { VIM_KEYMAP } from "./presets";
+import { FLAT_KEYMAP } from "./presets";
 
 type Ev = {
     key: string;
@@ -27,7 +27,6 @@ describe("eventToChord", () => {
     });
 
     it("encodes shift in case for printable chars (O, not Shift+O)", () => {
-        // Browser reports key 'O' with shiftKey true for shift+o.
         expect(eventToChord(ev("O", { shiftKey: true }))).toBe("O");
     });
 
@@ -56,36 +55,28 @@ describe("eventToChord", () => {
     });
 });
 
-describe("resolveCommand (vim)", () => {
-    it("j in normal mode → move.down", () => {
-        expect(resolveCommand(VIM_KEYMAP, "normal", ev("j"))).toBe("move.down");
+describe("resolveCommand (flat keymap)", () => {
+    it("ArrowDown resolves to move.down", () => {
+        expect(resolveCommand(FLAT_KEYMAP, ev("ArrowDown"))).toBe("move.down");
     });
 
-    it("i in normal mode → edit.enter", () => {
-        expect(resolveCommand(VIM_KEYMAP, "normal", ev("i"))).toBe(
-            "edit.enter",
+    it("Enter resolves to node.sibling", () => {
+        expect(resolveCommand(FLAT_KEYMAP, ev("Enter"))).toBe("node.sibling");
+    });
+
+    it("Shift+Enter resolves to node.response", () => {
+        expect(resolveCommand(FLAT_KEYMAP, ev("Enter", { shiftKey: true }))).toBe(
+            "node.response",
         );
     });
 
-    it("Escape in insert mode → edit.exit", () => {
-        expect(resolveCommand(VIM_KEYMAP, "insert", ev("Escape"))).toBe(
-            "edit.exit",
-        );
-    });
-
-    it("Ctrl+k in normal mode → sheet.quickSwitch", () => {
+    it("Ctrl+k resolves to sheet.quickSwitch", () => {
         expect(
-            resolveCommand(VIM_KEYMAP, "normal", ev("k", { ctrlKey: true })),
+            resolveCommand(FLAT_KEYMAP, ev("k", { ctrlKey: true })),
         ).toBe("sheet.quickSwitch");
     });
 
-    it("O (shift+o) in normal mode → arg.newRoot (not Shift+O)", () => {
-        expect(
-            resolveCommand(VIM_KEYMAP, "normal", ev("O", { shiftKey: true })),
-        ).toBe("arg.newRoot");
-    });
-
     it("returns null for an unbound chord", () => {
-        expect(resolveCommand(VIM_KEYMAP, "normal", ev("z"))).toBeNull();
+        expect(resolveCommand(FLAT_KEYMAP, ev("z"))).toBeNull();
     });
 });

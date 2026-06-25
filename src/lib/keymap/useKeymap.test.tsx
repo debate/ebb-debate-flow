@@ -2,23 +2,15 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { render } from "@testing-library/react";
 import { act } from "react";
 import { useRoundStore } from "@/lib/store/useRoundStore";
-import { makeFormatByKey } from "@/lib/format/presets";
+import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 import { useKeymap } from "./useKeymap";
 
-const BLANK_STATE = {
-    round: null,
-    activeSheetId: null,
-    mode: "normal" as const,
-    selection: null,
-    keymapName: "vim" as const,
-    quickSwitcherOpen: false,
-    settingsOpen: false,
-    keymapOverrides: {} as Record<string, string>,
-    renamingSheetId: null,
-};
-
 function resetStore() {
-    useRoundStore.setState(BLANK_STATE);
+    useRoundStore.setState({
+        round: null,
+        activeSheetId: null,
+        selection: null,
+    });
 }
 
 function Harness() {
@@ -39,137 +31,127 @@ function dispatchKey(key: string, init: Partial<KeyboardEventInit> = {}) {
     });
 }
 
-describe("useKeymap", () => {
+function freshRound() {
+    useRoundStore
+        .getState()
+        .createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
+    const id = useRoundStore
+        .getState()
+        .addSheet({ title: "DA", group: "aff" });
+    useRoundStore.getState().setActiveSheet(id);
+    return id;
+}
+
+describe("useKeymap — flat modeless navigation", () => {
     beforeEach(resetStore);
 
-    it('moves selection to the node below on "j" (vim normal)', () => {
-        const fmt = makeFormatByKey("policy");
-        const store = useRoundStore.getState();
-        store.createRound({ role: "aff", format: fmt });
-        const sheetId = useRoundStore
-            .getState()
-            .addSheet({ title: "DA", group: "neg" });
-        const sp = fmt.speeches[1].id;
-        const a = useRoundStore
-            .getState()
-            .addNode({ sheetId, speechId: sp, parentId: null });
-        const b = useRoundStore
-            .getState()
-            .addNode({ sheetId, speechId: sp, parentId: null });
+    it("ArrowDown moves selection to the next row", () => {
+        const sheetId = freshRound();
+        const speechId = useRoundStore.getState().round!.format.speeches[0].id;
         useRoundStore
             .getState()
-            .setSelection({ sheetId, speechId: sp, nodeId: a });
-
-        render(<Harness />);
-        dispatchKey("j");
-
-        expect(useRoundStore.getState().selection?.nodeId).toBe(b);
-    });
-
-    it("cleans up its listener on unmount", () => {
-        const fmt = makeFormatByKey("policy");
-        const store = useRoundStore.getState();
-        store.createRound({ role: "aff", format: fmt });
-        const sheetId = useRoundStore
-            .getState()
-            .addSheet({ title: "DA", group: "neg" });
-        const sp = fmt.speeches[1].id;
-        const a = useRoundStore
-            .getState()
-            .addNode({ sheetId, speechId: sp, parentId: null });
+            .placeBareNode({ sheetId, speechId, row: 0 });
         useRoundStore
             .getState()
-            .addNode({ sheetId, speechId: sp, parentId: null });
+            .placeBareNode({ sheetId, speechId, row: 1 });
         useRoundStore
             .getState()
-            .setSelection({ sheetId, speechId: sp, nodeId: a });
-
-        const { unmount } = render(<Harness />);
-        unmount();
-        dispatchKey("j");
-
-        // Selection unchanged because the listener was removed.
-        expect(useRoundStore.getState().selection?.nodeId).toBe(a);
-    });
-});
-
-describe("default keymap (always-insert)", () => {
-    beforeEach(resetStore);
-
-    it('arrow keys navigate between cells even while mode is "insert"', () => {
-        // Repro: after pressing Enter to create a cell, the store is in 'insert'
-        // mode. Navigation bindings live only in 'normal', so resolution must use
-        // the effective (normal) mode for the default keymap, not the raw mode.
-        const fmt = makeFormatByKey("policy");
-        const store = useRoundStore.getState();
-        store.createRound({ role: "aff", format: fmt });
-        useRoundStore.setState({ keymapName: "default" });
-        const sheetId = useRoundStore
-            .getState()
-            .addSheet({ title: "DA", group: "neg" });
-        const sp = fmt.speeches[1].id;
-        const a = useRoundStore
-            .getState()
-            .addNode({ sheetId, speechId: sp, parentId: null });
-        const b = useRoundStore
-            .getState()
-            .addNode({ sheetId, speechId: sp, parentId: null });
-        useRoundStore
-            .getState()
-            .setSelection({ sheetId, speechId: sp, nodeId: a });
-        useRoundStore.getState().setMode("insert");
+            .setSelection({ sheetId, speechId, row: 0 });
 
         render(<Harness />);
         dispatchKey("ArrowDown");
 
-        expect(useRoundStore.getState().selection?.nodeId).toBe(b);
+        expect(useRoundStore.getState().selection?.row).toBe(1);
     });
-});
 
-describe("two-key chord sequences", () => {
-    beforeEach(resetStore);
-
-    function setupWithSheet() {
-        const fmt = makeFormatByKey("policy");
-        const store = useRoundStore.getState();
-        store.createRound({ role: "aff", format: fmt });
-        const sheetId = useRoundStore
+    it("Enter spawns a sibling below", () => {
+        const sheetId = freshRound();
+        const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+        useRoundStore
             .getState()
-            .addSheet({ title: "Case", group: "aff" });
-        useRoundStore.setState({
-            activeSheetId: sheetId,
-            renamingSheetId: null,
-        });
-        return sheetId;
-    }
+            .placeBareNode({ sheetId, speechId, row: 0 });
+        useRoundStore
+            .getState()
+            .setSelection({ sheetId, speechId, row: 0 });
 
-    it('"g" then "r" fires sheet.rename (sets renamingSheetId)', () => {
-        const sheetId = setupWithSheet();
         render(<Harness />);
+        dispatchKey("Enter");
 
-        dispatchKey("g");
-        expect(useRoundStore.getState().renamingSheetId).toBeNull(); // not yet
-
-        dispatchKey("r");
-        expect(useRoundStore.getState().renamingSheetId).toBe(sheetId);
+        expect(useRoundStore.getState().selection?.row).toBe(1);
     });
 
-    it('"g" then an unbound key clears the prefix without firing', () => {
-        setupWithSheet();
-        render(<Harness />);
+    it("Shift+Enter spawns a response in the next column", () => {
+        const sheetId = freshRound();
+        const speeches = useRoundStore.getState().round!.format.speeches;
+        useRoundStore
+            .getState()
+            .placeBareNode({ sheetId, speechId: speeches[0].id, row: 0 });
+        useRoundStore
+            .getState()
+            .setSelection({ sheetId, speechId: speeches[0].id, row: 0 });
 
-        dispatchKey("g");
-        dispatchKey("x"); // 'g x' is not bound; 'x' alone is node.delete, no-ops (no selection)
-        expect(useRoundStore.getState().renamingSheetId).toBeNull();
+        render(<Harness />);
+        dispatchKey("Enter", { shiftKey: true });
+
+        expect(useRoundStore.getState().selection?.speechId).toBe(
+            speeches[1].id,
+        );
+        expect(useRoundStore.getState().selection?.row).toBe(0);
     });
 
-    it('"g" alone does not fire any command', () => {
-        setupWithSheet();
-        render(<Harness />);
+    it("Tab steps to the next column, Shift+Tab to the previous", () => {
+        const sheetId = freshRound();
+        const speeches = useRoundStore.getState().round!.format.speeches;
+        useRoundStore
+            .getState()
+            .setSelection({ sheetId, speechId: speeches[0].id, row: 0 });
 
-        dispatchKey("g");
-        expect(useRoundStore.getState().renamingSheetId).toBeNull();
-        // mode is unchanged
-        expect(useRoundStore.getState().mode).toBe("normal");
+        render(<Harness />);
+        dispatchKey("Tab");
+        expect(useRoundStore.getState().selection?.speechId).toBe(
+            speeches[1].id,
+        );
+
+        dispatchKey("Tab", { shiftKey: true });
+        expect(useRoundStore.getState().selection?.speechId).toBe(
+            speeches[0].id,
+        );
+    });
+
+    it("Ctrl+m grabs the selected node (sets moveSource)", () => {
+        const sheetId = freshRound();
+        const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+        const nodeId = useRoundStore
+            .getState()
+            .placeBareNode({ sheetId, speechId, row: 0 });
+        useRoundStore
+            .getState()
+            .setSelection({ sheetId, speechId, row: 0 });
+
+        render(<Harness />);
+        dispatchKey("m", { ctrlKey: true });
+
+        expect(useRoundStore.getState().moveSource).toBe(nodeId);
+    });
+
+    it("cleans up its listener on unmount", () => {
+        const sheetId = freshRound();
+        const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+        useRoundStore
+            .getState()
+            .placeBareNode({ sheetId, speechId, row: 0 });
+        useRoundStore
+            .getState()
+            .placeBareNode({ sheetId, speechId, row: 1 });
+        useRoundStore
+            .getState()
+            .setSelection({ sheetId, speechId, row: 0 });
+
+        const { unmount } = render(<Harness />);
+        unmount();
+        dispatchKey("ArrowDown");
+
+        // Selection unchanged because the listener was removed.
+        expect(useRoundStore.getState().selection?.row).toBe(0);
     });
 });

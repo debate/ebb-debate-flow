@@ -1,7 +1,5 @@
 import type { CommandId } from "@/lib/commands/registry";
 
-export type Mode = "normal" | "insert" | "move";
-
 /**
  * Canonical chord string for a key event.
  * Format: "Meta+Ctrl+Alt+Shift+key" (modifiers in that fixed order, only
@@ -11,5 +9,6 @@ export type Chord = string;
 
 export interface Keymap {
     name: string;
-    bindings: Record<Mode, Record<Chord, CommandId>>;
+    /** Flat modeless bindings: chord → command. */
+    bindings: Record<Chord, CommandId>;
 }

@@ -1,32 +1,35 @@
-import { DEFAULT_KEYMAP, VIM_KEYMAP } from "@/lib/keymap/presets";
+import { FLAT_KEYMAP, GRAB_BINDINGS } from "@/lib/keymap/presets";
 
-it("default keymap binds conceded and extended", () => {
-    expect(DEFAULT_KEYMAP.bindings.normal["Ctrl+Shift+x"]).toBe(
+it("flat keymap binds conceded and extended", () => {
+    expect(FLAT_KEYMAP.bindings["Ctrl+Shift+x"]).toBe(
         "status.toggleConceded",
     );
-    expect(DEFAULT_KEYMAP.bindings.normal["Ctrl+e"]).toBe(
-        "status.toggleExtended",
-    );
+    expect(FLAT_KEYMAP.bindings["Ctrl+e"]).toBe("status.toggleExtended");
 });
 
-it("binds grab-to-move in both keymaps without colliding", () => {
-    // default cells are always editable, so grab must be a chord; vim uses bare 'm'.
-    expect(DEFAULT_KEYMAP.bindings.normal["Ctrl+m"]).toBe("move.grab");
-    expect(VIM_KEYMAP.bindings.normal["m"]).toBe("move.grab");
+it("grab bindings map Enter to move.commit and Escape to move.cancel", () => {
+    expect(GRAB_BINDINGS["Enter"]).toBe("move.commit");
+    expect(GRAB_BINDINGS["Escape"]).toBe("move.cancel");
 });
 
-it("vim insert mode binds Enter to a sibling response and Escape to exit", () => {
-    expect(VIM_KEYMAP.bindings.insert["Enter"]).toBe("node.addAnswer");
-    expect(VIM_KEYMAP.bindings.insert["Escape"]).toBe("edit.exit");
+it("flat keymap binds arrow keys to move.* navigation", () => {
+    expect(FLAT_KEYMAP.bindings["ArrowRight"]).toBe("move.right");
+    expect(FLAT_KEYMAP.bindings["ArrowLeft"]).toBe("move.left");
+    expect(FLAT_KEYMAP.bindings["ArrowUp"]).toBe("move.up");
+    expect(FLAT_KEYMAP.bindings["ArrowDown"]).toBe("move.down");
 });
 
-it("move mode binds commit/cancel and spatial navigation", () => {
-    for (const km of [DEFAULT_KEYMAP, VIM_KEYMAP]) {
-        expect(km.bindings.move["Enter"]).toBe("move.commit");
-        expect(km.bindings.move["Escape"]).toBe("move.cancel");
-        expect(km.bindings.move["ArrowRight"]).toBe("move.right");
-    }
-    // vim move mode also accepts hjkl.
-    expect(VIM_KEYMAP.bindings.move["l"]).toBe("move.right");
-    expect(VIM_KEYMAP.bindings.move["h"]).toBe("move.left");
+it("flat keymap binds Enter to node.sibling and Shift+Enter to node.response", () => {
+    expect(FLAT_KEYMAP.bindings["Enter"]).toBe("node.sibling");
+    expect(FLAT_KEYMAP.bindings["Shift+Enter"]).toBe("node.response");
+});
+
+it("flat keymap binds Tab to move.right and Shift+Tab to move.left", () => {
+    expect(FLAT_KEYMAP.bindings["Tab"]).toBe("move.right");
+    expect(FLAT_KEYMAP.bindings["Shift+Tab"]).toBe("move.left");
+});
+
+it("flat keymap binds Delete to cell.clear and Ctrl+Backspace to row.delete", () => {
+    expect(FLAT_KEYMAP.bindings["Delete"]).toBe("cell.clear");
+    expect(FLAT_KEYMAP.bindings["Ctrl+Backspace"]).toBe("row.delete");
 });
