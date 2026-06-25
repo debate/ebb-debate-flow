@@ -411,6 +411,18 @@ body {
     background: color-mix(in srgb, var(--sel) 6%, transparent);
 }
 
+/* Reserved cell — an empty cell beside another argument's responses. It belongs
+   to that exchange's vertical band, so it is inert (no placement) and greyed
+   with a faint diagonal hatch to read as "not a place to type". */
+.flow td.cell-reserved {
+    cursor: default;
+    background: repeating-linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--muted) 8%, transparent) 0 6px,
+        transparent 6px 12px
+    );
+}
+
 /* First-run prompt shown in the entry cell of a brand-new sheet. Muted and
    italic so it reads as guidance, not content; disappears on first keystroke.
    No opacity dimming: --muted on white is ~4.84:1, but fading it would drop

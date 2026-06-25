@@ -356,3 +356,45 @@ describe("FlowGrid — CX sheet folding", () => {
         expect(screen.queryByText("1.")).not.toBeNull();
     });
 });
+describe("FlowGrid — reserved cells beside a response band", () => {
+    beforeEach(resetStore);
+
+    it("greys band cells in the parent column and blocks editing there", () => {
+        const fmt = makeFormatByKey("policy");
+        useRoundStore.getState().createRound({ role: "aff", format: fmt });
+        const sheetId = useRoundStore
+            .getState()
+            .addSheet({ title: "Case", group: "aff" });
+        useRoundStore.getState().setActiveSheet(sheetId);
+        const c0 = fmt.speeches[0].id; // 1AC
+
+        // arg1 in 1AC with three responses stacked in 1NC (rows 0..2).
+        useRoundStore
+            .getState()
+            .placeBareNode({ sheetId, speechId: c0, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId: c0, row: 0 });
+        useRoundStore.getState().spawnResponse();
+        useRoundStore.getState().spawnSibling();
+        useRoundStore.getState().spawnSibling();
+
+        render(<FlowGrid sheetId={sheetId} />);
+        const rows = document.querySelectorAll("tbody tr");
+
+        // 1AC (first column) rows 1 and 2 sit inside arg1's band → reserved.
+        const r1c0 = rows[1].querySelectorAll("td")[0];
+        const r2c0 = rows[2].querySelectorAll("td")[0];
+        expect(r1c0.className).toContain("cell-reserved");
+        expect(r2c0.className).toContain("cell-reserved");
+
+        // Row 3 in 1AC is below the band → a normal open entry cell.
+        const r3c0 = rows[3].querySelectorAll("td")[0];
+        expect(r3c0.className).toContain("cell-open");
+        expect(r3c0.className).not.toContain("cell-reserved");
+
+        // Clicking a reserved cell neither selects it nor opens an editor.
+        const before = useRoundStore.getState().selection;
+        fireEvent.click(r1c0);
+        expect(useRoundStore.getState().selection).toEqual(before);
+        expect(r1c0.querySelector("textarea")).toBeNull();
+    });
+});

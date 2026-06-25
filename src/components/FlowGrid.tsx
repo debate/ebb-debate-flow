@@ -15,7 +15,7 @@ import { detectDrops } from "@/lib/model/drops";
 import GridCell from "./GridCell";
 import EmptyCellEditor from "./EmptyCellEditor";
 import { columnsForSheet } from "@/lib/grid/columns";
-import { occupantAt, maxRow } from "@/lib/grid/coords";
+import { occupantAt, maxRow, subtreeMaxRow } from "@/lib/grid/coords";
 
 const TRAILING_BUFFER_ROWS = 8;
 
@@ -97,6 +97,20 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
         : new Set<string>();
 
     const sheetIsEmpty = sheetNodes.length === 0;
+
+    // ── Reserved cells ────────────────────────────────────────────────────────
+    // Empty cells inside an argument's response band: the parent-column rows
+    // beside its responses. They are greyed and inert so a new argument can't be
+    // interleaved into the middle of an exchange — siblings land below the band.
+    const reservedKeys = new Set<string>();
+    for (const p of sheetNodes) {
+        const end = subtreeMaxRow(sheetNodes, p.id);
+        for (let r = p.row + 1; r <= end; r++) {
+            if (!occupantAt(sheetNodes, sheetId, p.speechId, r)) {
+                reservedKeys.add(`${r},${p.speechId}`);
+            }
+        }
+    }
 
     return (
         <>
@@ -234,18 +248,21 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                 }
 
                                 // Empty cell
-                                const isSelected = isSel;
+                                const cellKey = `${row},${speech.id}`;
+                                // Reserved: greyed and inert (beside another arg's
+                                // responses). Not selectable, not a drop target.
+                                const reserved = reservedKeys.has(cellKey);
+                                const isSelected = isSel && !reserved;
                                 const showHint =
                                     sheetIsEmpty &&
                                     row === 0 &&
                                     speech.id === speeches[0].id;
                                 const isMoveCursor =
                                     moveSource !== null && isSelected;
-                                const cellKey = `${row},${speech.id}`;
                                 const isDragOver = dragOverKey === cellKey;
                                 const classes = [
                                     sideClass,
-                                    "cell-open",
+                                    reserved ? "cell-reserved" : "cell-open",
                                     isSelected && moveSource === null
                                         ? "cell-sel"
                                         : "",
@@ -258,36 +275,48 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                     <td
                                         key={speech.id}
                                         className={classes}
-                                        onClick={() =>
-                                            setSelection({
-                                                sheetId,
-                                                speechId: speech.id,
-                                                row,
-                                            })
+                                        aria-disabled={reserved || undefined}
+                                        onClick={
+                                            reserved
+                                                ? undefined
+                                                : () =>
+                                                      setSelection({
+                                                          sheetId,
+                                                          speechId: speech.id,
+                                                          row,
+                                                      })
                                         }
-                                        onDragOver={(e) => {
-                                            e.preventDefault();
-                                            setDragOverKey(cellKey);
-                                        }}
-                                        onDrop={(e) => {
-                                            e.preventDefault();
-                                            const dragged =
-                                                e.dataTransfer.getData(
-                                                    "text/df-node",
-                                                );
-                                            if (dragged) {
-                                                // Single-cell drag: move the node to this cell.
-                                                useRoundStore
-                                                    .getState()
-                                                    .moveCellTo(
-                                                        dragged,
-                                                        speech.id,
-                                                        row,
-                                                    );
-                                                setFlashNode(dragged);
-                                            }
-                                            setDragOverKey(null);
-                                        }}
+                                        onDragOver={
+                                            reserved
+                                                ? undefined
+                                                : (e) => {
+                                                      e.preventDefault();
+                                                      setDragOverKey(cellKey);
+                                                  }
+                                        }
+                                        onDrop={
+                                            reserved
+                                                ? undefined
+                                                : (e) => {
+                                                      e.preventDefault();
+                                                      const dragged =
+                                                          e.dataTransfer.getData(
+                                                              "text/df-node",
+                                                          );
+                                                      if (dragged) {
+                                                          // Single-cell drag: move the node here.
+                                                          useRoundStore
+                                                              .getState()
+                                                              .moveCellTo(
+                                                                  dragged,
+                                                                  speech.id,
+                                                                  row,
+                                                              );
+                                                          setFlashNode(dragged);
+                                                      }
+                                                      setDragOverKey(null);
+                                                  }
+                                        }
                                     >
                                         {isSelected && moveSource === null ? (
                                             <EmptyCellEditor

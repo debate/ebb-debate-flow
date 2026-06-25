@@ -150,3 +150,85 @@ describe("subtree", () => {
         expect(res.ok).toBe(false);
     });
 });
+
+// ── Band-aware sibling placement + reserved cells ────────────────────────────
+
+import { subtreeMaxRow, isReservedCell } from "./coords";
+
+/** Node with an explicit parent (the module `n` helper hard-codes parentId null). */
+const cn = (
+    id: string,
+    speechId: string,
+    row: number,
+    parentId: string | null,
+): ArgumentNode => ({ ...n(id, speechId, row), parentId });
+
+/** arg1 in column "a" with six responses stacked in column "b" (rows 0..5). */
+function bandFixture(): ArgumentNode[] {
+    return [
+        n("arg1", "a", 0),
+        cn("r1", "b", 0, "arg1"),
+        cn("r2", "b", 1, "arg1"),
+        cn("r3", "b", 2, "arg1"),
+        cn("r4", "b", 3, "arg1"),
+        cn("r5", "b", 4, "arg1"),
+        cn("r6", "b", 5, "arg1"),
+    ];
+}
+
+describe("subtreeMaxRow", () => {
+    it("returns the deepest row spanned by a node's whole subtree", () => {
+        expect(subtreeMaxRow(bandFixture(), "arg1")).toBe(5);
+    });
+
+    it("equals the node's own row when it has no children", () => {
+        expect(subtreeMaxRow(bandFixture(), "r3")).toBe(2);
+    });
+});
+
+describe("band-aware sibling placement", () => {
+    it("places a sibling of a banded parent BELOW the whole band", () => {
+        const nodes = bandFixture();
+        const t = spawnTarget(nodes, "s1", speeches, nodes[0], "sibling");
+        // Not row 1 (inside the band) — row 6, just past response6.
+        expect(t).toEqual({ speechId: "a", row: 6 });
+    });
+
+    it("does not ripple the band when the sibling lands on the empty row below", () => {
+        const nodes = bandFixture();
+        const res = placeForSpawn(nodes, "s1", speeches, nodes[0], "sibling")!;
+        expect({ speechId: res.speechId, row: res.row }).toEqual({
+            speechId: "a",
+            row: 6,
+        });
+        // Responses stay contiguous at 0..5.
+        expect(res.nodes.find((m) => m.id === "r1")!.row).toBe(0);
+        expect(res.nodes.find((m) => m.id === "r6")!.row).toBe(5);
+    });
+
+    it("a sibling of a leaf response still stacks directly below it", () => {
+        const nodes = bandFixture();
+        const r3 = nodes.find((m) => m.id === "r3")!;
+        const t = spawnTarget(nodes, "s1", speeches, r3, "sibling");
+        expect(t).toEqual({ speechId: "b", row: 3 });
+    });
+});
+
+describe("isReservedCell", () => {
+    it("reserves empty parent-column cells within a response band", () => {
+        const nodes = bandFixture();
+        expect(isReservedCell(nodes, "s1", "a", 1)).toBe(true);
+        expect(isReservedCell(nodes, "s1", "a", 5)).toBe(true);
+    });
+
+    it("does not reserve the band-bottom+1 cell or the parent's own cell", () => {
+        const nodes = bandFixture();
+        expect(isReservedCell(nodes, "s1", "a", 6)).toBe(false);
+        expect(isReservedCell(nodes, "s1", "a", 0)).toBe(false); // occupied by arg1
+    });
+
+    it("does not reserve occupied cells", () => {
+        const nodes = bandFixture();
+        expect(isReservedCell(nodes, "s1", "b", 2)).toBe(false); // r3 lives here
+    });
+});

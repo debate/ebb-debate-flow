@@ -206,3 +206,51 @@ describe("coordinate store actions", () => {
         expect(nodes.some((n) => n.parentId === root)).toBe(false);
     });
 });
+
+describe("REGRESSION: sibling does not split a response band", () => {
+    beforeEach(resetStore);
+
+    it("Enter on an argument with six responses lands the sibling below the band", () => {
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const speeches = s.round!.format.speeches;
+        const c0 = speeches[0].id; // 1AC
+        const c1 = speeches[1].id; // 1NC
+
+        // arg1 in 1AC, then six responses stacked in 1NC (Enter on the first).
+        const arg1 = s.placeBareNode({ sheetId, speechId: c0, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId: c0, row: 0 });
+        useRoundStore.getState().spawnResponse(); // response1 at (1NC, 0)
+        for (let i = 0; i < 5; i++) {
+            // Enter on the last response stacks the next one below it.
+            useRoundStore.getState().spawnSibling();
+        }
+        // Sanity: six contiguous responses in 1NC at rows 0..5, all children of arg1.
+        let nodes = useRoundStore.getState().round!.nodes;
+        const responses = nodes
+            .filter((n) => n.speechId === c1)
+            .sort((a, b) => a.row - b.row);
+        expect(responses.map((n) => n.row)).toEqual([0, 1, 2, 3, 4, 5]);
+        expect(responses.every((n) => n.parentId === arg1)).toBe(true);
+
+        // Now add a sibling of arg1 (select arg1, Enter).
+        useRoundStore.getState().setSelection({ sheetId, speechId: c0, row: 0 });
+        const arg2 = useRoundStore.getState().spawnSibling()!;
+
+        nodes = useRoundStore.getState().round!.nodes;
+        const a2 = nodes.find((n) => n.id === arg2)!;
+        // arg2 lands BELOW the whole band (row 6), not interleaved.
+        expect({ speechId: a2.speechId, row: a2.row }).toEqual({
+            speechId: c0,
+            row: 6,
+        });
+        // The response band is untouched — still contiguous at 0..5.
+        expect(
+            nodes
+                .filter((n) => n.speechId === c1)
+                .sort((a, b) => a.row - b.row)
+                .map((n) => n.row),
+        ).toEqual([0, 1, 2, 3, 4, 5]);
+    });
+});

@@ -34,6 +34,38 @@ export function maxRow(nodes: ArgumentNode[], sheetId: string): number {
     return m;
 }
 
+/**
+ * The deepest grid row spanned by a node's entire subtree (the node plus all
+ * transitive responses, across every column). This is the bottom of the node's
+ * "band" — the vertical space the exchange rooted at this node occupies.
+ */
+export function subtreeMaxRow(nodes: ArgumentNode[], nodeId: string): number {
+    const ids = descendantIds(nodes, nodeId);
+    let m = -1;
+    for (const n of nodes) if (ids.has(n.id) && n.row > m) m = n.row;
+    return m;
+}
+
+/**
+ * True when (speechId, row) is an EMPTY cell that falls strictly inside the
+ * band of an argument living above it in the same column. Such cells sit beside
+ * another argument's responses; placing a new argument there would interleave
+ * it into the exchange, so the UI greys them out and blocks placement.
+ */
+export function isReservedCell(
+    nodes: ArgumentNode[],
+    sheetId: string,
+    speechId: string,
+    row: number,
+): boolean {
+    if (occupantAt(nodes, sheetId, speechId, row)) return false;
+    for (const p of nodes) {
+        if (p.sheetId !== sheetId || p.speechId !== speechId) continue;
+        if (p.row < row && row <= subtreeMaxRow(nodes, p.id)) return true;
+    }
+    return false;
+}
+
 /** Shift every node in the sheet with row >= fromRow DOWN by `by` (default 1). */
 export function rippleDown(
     nodes: ArgumentNode[],
@@ -73,7 +105,14 @@ export function spawnTarget(
     kind: Spawn,
 ): { speechId: string; row: number } | null {
     if (kind === "sibling") {
-        return { speechId: current.speechId, row: current.row + 1 };
+        // A sibling lands BELOW the current node's whole subtree band, not at
+        // current.row + 1 — otherwise it splits a multi-row response band
+        // (e.g. a sibling of an argument that has six responses would land
+        // beside response #2 instead of after the whole exchange).
+        return {
+            speechId: current.speechId,
+            row: subtreeMaxRow(nodes, current.id) + 1,
+        };
     }
     const col = colIndexOf(speeches, current.speechId);
     const next = speeches[col + 1];
