@@ -33,7 +33,7 @@ function round(overrides: Partial<Round> = {}): Round {
                 sheetId: "s",
                 speechId: "1ac",
                 parentId: null,
-                order: 0,
+                row: 0,
                 text: "perm do both",
                 statuses: [],
                 bold: false,

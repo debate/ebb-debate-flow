@@ -48,7 +48,6 @@ export default function RoundHeader() {
                 round: imported,
                 activeSheetId: null,
                 selection: null,
-                mode: "normal",
             });
         } catch {
             alert(

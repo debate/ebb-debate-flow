@@ -66,7 +66,6 @@ beforeEach(async () => {
     useRoundStore.setState({
         round: null,
         activeSheetId: null,
-        mode: "normal",
         selection: null,
     });
 });

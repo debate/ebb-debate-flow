@@ -28,7 +28,6 @@ export default function Sidebar() {
     const renamingSheetId = useRoundStore((s) => s.renamingSheetId);
     const setRenamingSheet = useRoundStore((s) => s.setRenamingSheet);
     const labelDrops = useRoundStore((s) => s.labelDrops);
-    const straightDown = useRoundStore((s) => s.straightDown);
     const removeSheet = useRoundStore((s) => s.removeSheet);
 
     if (!round) return null;
@@ -91,7 +90,7 @@ export default function Sidebar() {
                                         key={sheet.id}
                                         sheet={sheet}
                                         dropCount={
-                                            labelDrops && !straightDown
+                                            labelDrops
                                                 ? selectSheetDropCount(
                                                       round,
                                                       sheet.id,

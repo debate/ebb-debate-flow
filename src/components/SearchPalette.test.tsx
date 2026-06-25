@@ -12,7 +12,6 @@ function resetStore() {
     useRoundStore.setState({
         round: null,
         activeSheetId: null,
-        mode: "normal",
         selection: null,
         quickSwitcherOpen: false,
         settingsOpen: false,
@@ -87,8 +86,12 @@ describe("SearchPalette", () => {
         await userEvent.keyboard("{Enter}");
         const s = useRoundStore.getState();
         expect(s.activeSheetId).toBe(daId);
-        expect(s.selection?.nodeId).toBe(nodeId);
-        expect(s.mode).toBe("insert");
+        const node = s.round!.nodes.find((n) => n.id === nodeId)!;
+        expect(s.selection).toMatchObject({
+            sheetId: daId,
+            speechId: node.speechId,
+            row: node.row,
+        });
         expect(s.quickSwitcherOpen).toBe(false);
     });
 });

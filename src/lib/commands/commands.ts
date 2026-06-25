@@ -26,7 +26,16 @@ function jumpToSheet(n: number): void {
 }
 
 /** Column stepping helper. */
-function columnStep(state: { selection: { sheetId: string; speechId: string; row: number } | null; round: Round | null }, dir: "up" | "down" | "left" | "right"): void {
+function columnStep(
+    state: {
+        selection: { sheetId: string; speechId: string; row: number } | null;
+        round: Round | null;
+        setSelection: (
+            s: { sheetId: string; speechId: string; row: number } | null,
+        ) => void;
+    },
+    dir: "up" | "down" | "left" | "right",
+): void {
     const { round, selection } = state;
     if (!round || !selection) return;
     const sheet = round.sheets.find((s) => s.id === selection.sheetId);

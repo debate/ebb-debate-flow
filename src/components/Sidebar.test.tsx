@@ -15,7 +15,6 @@ function resetStore() {
     useRoundStore.setState({
         round: null,
         activeSheetId: null,
-        mode: "normal",
         selection: null,
         quickSwitcherOpen: false,
         settingsOpen: false,

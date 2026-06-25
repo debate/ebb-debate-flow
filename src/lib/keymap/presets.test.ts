@@ -1,3 +1,4 @@
+import { it, expect } from "vitest";
 import { FLAT_KEYMAP, GRAB_BINDINGS } from "@/lib/keymap/presets";
 
 it("flat keymap binds conceded and extended", () => {

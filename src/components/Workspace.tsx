@@ -19,34 +19,29 @@ export default function Workspace() {
     const activeSheetId = useRoundStore((s) => s.activeSheetId);
 
     useEffect(() => {
-        const { round, selection, mode } = useRoundStore.getState();
-        if (!activeSheetId || !round || mode === "insert") return;
-        if (selection?.sheetId === activeSheetId && selection.nodeId !== "")
-            return;
+        const { round, selection } = useRoundStore.getState();
+        if (!activeSheetId || !round) return;
+        if (selection?.sheetId === activeSheetId) return;
 
         const activeSheet = round.sheets.find((s) => s.id === activeSheetId);
         const columns =
             activeSheet?.kind === "cx" ? CX_COLUMNS : round.format.speeches;
+        // Land on the topmost-leftmost occupied cell, else the first cell.
         const sheetNodes = round.nodes
             .filter((n) => n.sheetId === activeSheetId)
             .sort((a, b) => {
+                if (a.row !== b.row) return a.row - b.row;
                 const colA = columns.findIndex((s) => s.id === a.speechId);
                 const colB = columns.findIndex((s) => s.id === b.speechId);
-                return colA !== colB ? colA - colB : a.order - b.order;
+                return colA - colB;
             });
 
-        if (sheetNodes.length > 0) {
-            const first = sheetNodes[0];
-            useRoundStore
-                .getState()
-                .setSelection({
-                    sheetId: first.sheetId,
-                    speechId: first.speechId,
-                    nodeId: first.id,
-                });
-        } else {
-            useRoundStore.getState().setSelection(null);
-        }
+        const first = sheetNodes[0];
+        useRoundStore.getState().setSelection({
+            sheetId: activeSheetId,
+            speechId: first ? first.speechId : columns[0].id,
+            row: first ? first.row : 0,
+        });
     }, [activeSheetId]);
 
     return (

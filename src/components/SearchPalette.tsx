@@ -61,7 +61,6 @@ export default function SearchPalette() {
     const round = useRoundStore((s) => s.round);
     const setActiveSheet = useRoundStore((s) => s.setActiveSheet);
     const setSelection = useRoundStore((s) => s.setSelection);
-    const setMode = useRoundStore((s) => s.setMode);
     const setOpen = useRoundStore((s) => s.setQuickSwitcherOpen);
 
     const [query, setQuery] = useState("");
@@ -146,12 +145,12 @@ export default function SearchPalette() {
             setActiveSheet(row.sheetId);
         } else {
             setActiveSheet(row.sheetId);
+            const node = round?.nodes.find((n) => n.id === row.nodeId);
             setSelection({
                 sheetId: row.sheetId,
                 speechId: row.speechId,
-                nodeId: row.nodeId,
+                row: node ? node.row : 0,
             });
-            setMode("insert");
         }
         setOpen(false);
     }

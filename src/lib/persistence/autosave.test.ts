@@ -54,7 +54,6 @@ function resetStore() {
     useRoundStore.setState({
         round: null,
         activeSheetId: null,
-        mode: "normal",
         selection: null,
     });
 }
@@ -235,7 +234,7 @@ describe("attachAutosave", () => {
         expect(useRoundStore.getState().round).toBeNull();
 
         // Trigger an unrelated store change
-        useRoundStore.setState({ mode: "insert" });
+        useRoundStore.setState({ settingsOpen: true });
 
         vi.advanceTimersByTime(500);
         await Promise.resolve();
@@ -268,7 +267,7 @@ describe("attachAutosave", () => {
         expect(firstPersistedCount).toBe(1);
 
         // No further mutation — trigger an unrelated state update that doesn't change round
-        useRoundStore.setState({ mode: "insert" });
+        useRoundStore.setState({ settingsOpen: true });
         vi.advanceTimersByTime(500);
         await Promise.resolve();
         await Promise.resolve();
@@ -304,7 +303,7 @@ function mkRound(id: string, over: Partial<Round> = {}): Round {
                 sheetId: "s",
                 speechId: "1ac",
                 parentId: null,
-                order: 0,
+                row: 0,
                 text: "kritik",
                 statuses: [],
                 bold: false,

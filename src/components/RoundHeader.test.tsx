@@ -46,7 +46,6 @@ describe("RoundHeader", () => {
         useRoundStore.setState({
             round: null,
             activeSheetId: null,
-            mode: "normal",
             selection: null,
             quickSwitcherOpen: false,
             settingsOpen: false,
@@ -128,8 +127,7 @@ describe("RoundHeader", () => {
         // Simulate stale selection state
         useRoundStore.setState({
             activeSheetId: "stale-sheet",
-            selection: { sheetId: "stale-sheet", speechId: "s1", nodeId: "n1" },
-            mode: "insert",
+            selection: { sheetId: "stale-sheet", speechId: "s1", row: 0 },
         });
 
         // Build a different round to return from the mock
@@ -143,8 +141,7 @@ describe("RoundHeader", () => {
         setupRound("aff");
         useRoundStore.setState({
             activeSheetId: "stale-sheet",
-            selection: { sheetId: "stale-sheet", speechId: "s1", nodeId: "n1" },
-            mode: "insert",
+            selection: { sheetId: "stale-sheet", speechId: "s1", row: 0 },
         });
 
         vi.mocked(readRoundFile).mockResolvedValueOnce(importedRound);
@@ -162,7 +159,6 @@ describe("RoundHeader", () => {
             expect(state.round).toBe(importedRound);
             expect(state.activeSheetId).toBeNull();
             expect(state.selection).toBeNull();
-            expect(state.mode).toBe("normal");
         });
     });
 });
