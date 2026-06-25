@@ -11,6 +11,11 @@ it("binds grab-to-move in both keymaps without colliding", () => {
   expect(VIM_KEYMAP.bindings.normal["m"]).toBe("move.grab");
 });
 
+it("vim insert mode binds Enter to a sibling response and Escape to exit", () => {
+  expect(VIM_KEYMAP.bindings.insert["Enter"]).toBe("node.addAnswer");
+  expect(VIM_KEYMAP.bindings.insert["Escape"]).toBe("edit.exit");
+});
+
 it("move mode binds commit/cancel and spatial navigation", () => {
   for (const km of [DEFAULT_KEYMAP, VIM_KEYMAP]) {
     expect(km.bindings.move["Enter"]).toBe("move.commit");

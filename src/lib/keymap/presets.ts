@@ -100,7 +100,7 @@ export const VIM_KEYMAP: Keymap = {
       "g r": "sheet.rename",
       ...COMMON_NORMAL,
     },
-    insert: { Escape: "edit.exit" },
+    insert: { Escape: "edit.exit", Enter: "node.addAnswer" },
     move: {
       h: "move.left",
       j: "move.down",
