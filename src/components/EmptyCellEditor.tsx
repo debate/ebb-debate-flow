@@ -34,10 +34,9 @@ export default function EmptyCellEditor({
       spellCheck={false}
       value=""
       onChange={(e) => {
-        const id = useRoundStore
+        useRoundStore
           .getState()
           .placeBareNode({ sheetId, speechId, row }, e.target.value);
-        useRoundStore.getState().updateNodeText(id, e.target.value);
         // Selection stays on the cell; GridCell now renders.
       }}
     />

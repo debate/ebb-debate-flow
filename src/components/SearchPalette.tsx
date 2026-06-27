@@ -56,6 +56,12 @@ function Highlighted({ text, ranges }: { text: string; ranges: number[] }) {
 
 export default function SearchPalette() {
   const open = useRoundStore((s) => s.quickSwitcherOpen);
+  if (!open) return null;
+  return <SearchPaletteInner />;
+}
+
+function SearchPaletteInner() {
+  const open = useRoundStore((s) => s.quickSwitcherOpen);
   const round = useRoundStore((s) => s.round);
   const setActiveSheet = useRoundStore((s) => s.setActiveSheet);
   const setSelection = useRoundStore((s) => s.setSelection);

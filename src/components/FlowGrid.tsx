@@ -9,7 +9,7 @@
  * targets. Relationships (parent/child) are shown via selection-time highlight.
  */
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { detectDrops } from "@/lib/model/drops";
 import GridCell from "./GridCell";
@@ -24,7 +24,21 @@ export interface FlowGridProps {
 }
 
 export default function FlowGrid({ sheetId }: FlowGridProps) {
-  const nodes = useRoundStore((s) => s.round?.nodes ?? []);
+  const structuralKey = useRoundStore(
+    (s) => {
+      const filtered = (s.round?.nodes ?? []).filter((n) => n.sheetId === sheetId);
+      return filtered
+        .map((n) => `${n.id}:${n.speechId}:${n.row}:${n.parentId}:${n.bold}:${n.statuses.join(",")}`)
+        .join("|");
+    }
+  );
+
+  const sheetNodes = useMemo(() => {
+    const _ = structuralKey;
+    const allNodes = useRoundStore.getState().round?.nodes ?? [];
+    return allNodes.filter((n) => n.sheetId === sheetId);
+  }, [structuralKey, sheetId]);
+
   const format = useRoundStore((s) => s.round?.format ?? null);
   const selection = useRoundStore((s) => s.selection);
   const setSelection = useRoundStore((s) => s.setSelection);
@@ -33,15 +47,23 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
   const setFlashNode = useRoundStore((s) => s.setFlashNode);
   const sheets = useRoundStore((s) => s.round?.sheets ?? []);
 
+  const droppedIdsKey = useRoundStore(
+    (s) => {
+      const ids = detectDrops(s.round?.nodes ?? [], s.round?.format ?? null, sheetId);
+      return ids.join(",");
+    }
+  );
+
+  const droppedIds = useMemo(() => {
+    return new Set(droppedIdsKey ? droppedIdsKey.split(",") : []);
+  }, [droppedIdsKey]);
+
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
 
   const sheet = sheets.find((s) => s.id === sheetId);
   if (!format || !sheet) return null;
 
   const speeches = columnsForSheet(format, sheet);
-
-  const sheetNodes = nodes.filter((n) => n.sheetId === sheetId);
-  const droppedIds = new Set(detectDrops(nodes, format, sheetId));
 
   // ── Compute group header info ──────────────────────────────────────────────
   interface TopCell {

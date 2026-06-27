@@ -9,6 +9,12 @@ import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui
 
 export default function InfoPanel() {
   const open = useRoundStore((s) => s.infoOpen);
+  if (!open) return null;
+  return <InfoPanelInner />;
+}
+
+function InfoPanelInner() {
+  const open = useRoundStore((s) => s.infoOpen);
   const round = useRoundStore((s) => s.round);
   const setInfoOpen = useRoundStore((s) => s.setInfoOpen);
   const setScouting = useRoundStore((s) => s.setScouting);

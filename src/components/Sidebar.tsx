@@ -23,7 +23,27 @@ const GROUPS: GroupConfig[] = [
 ];
 
 export default function Sidebar() {
-  const round = useRoundStore((s) => s.round);
+  const sheets = useRoundStore(
+    (s) => s.round?.sheets ?? [],
+    (next, prev) => {
+      if (next.length !== prev.length) return false;
+      for (let i = 0; i < next.length; i++) {
+        const ns = next[i];
+        const ps = prev[i];
+        if (
+          ns.id !== ps.id ||
+          ns.title !== ps.title ||
+          ns.group !== ps.group ||
+          ns.order !== ps.order ||
+          ns.kind !== ps.kind
+        ) {
+          return false;
+        }
+      }
+      return true;
+    }
+  );
+
   const activeSheetId = useRoundStore((s) => s.activeSheetId);
   const setActiveSheet = useRoundStore((s) => s.setActiveSheet);
   const renamingSheetId = useRoundStore((s) => s.renamingSheetId);
@@ -32,7 +52,7 @@ export default function Sidebar() {
   const removeSheet = useRoundStore((s) => s.removeSheet);
   const restoreSheet = useRoundStore((s) => s.restoreSheet);
 
-  if (!round) return null;
+  if (sheets.length === 0) return null;
 
   // Deleting a sheet wipes a whole column of a live round, so it must be
   // reversible at the point of action — not only via a keyboard Undo the user
@@ -48,7 +68,7 @@ export default function Sidebar() {
     });
   }
 
-  const cxSheet = round.sheets.find((s) => s.kind === "cx") ?? null;
+  const cxSheet = sheets.find((s) => s.kind === "cx") ?? null;
 
   return (
     <nav
@@ -107,20 +127,22 @@ export default function Sidebar() {
           </div>
         )}
         {GROUPS.map(({ group, label }) => {
-          const sheets = selectSheetsByGroup(round, group).filter((s) => s.kind !== "cx");
+          const groupSheets = sheets
+            .filter((s) => s.group === group)
+            .sort((a, b) => a.order - b.order)
+            .filter((s) => s.kind !== "cx");
           return (
             <div key={group} className="mb-3">
               <div className="px-2 pb-1 font-mono text-[9px] font-bold tracking-widest text-muted-foreground uppercase">
                 {label}
               </div>
-              {sheets.length === 0 ? (
+              {groupSheets.length === 0 ? (
                 <div className="px-2 py-1 text-xs text-muted-foreground">No sheets</div>
               ) : (
-                sheets.map((sheet) => (
+                groupSheets.map((sheet) => (
                   <SheetRow
                     key={sheet.id}
                     sheet={sheet}
-                    dropCount={labelDrops ? selectSheetDropCount(round, sheet.id) : 0}
                     active={sheet.id === activeSheetId}
                     onSelect={() => setActiveSheet(sheet.id)}
                     isRenaming={sheet.id === renamingSheetId}
@@ -139,7 +161,6 @@ export default function Sidebar() {
 
 interface SheetRowProps {
   sheet: Sheet;
-  dropCount: number;
   active: boolean;
   onSelect: () => void;
   isRenaming: boolean;
@@ -149,7 +170,6 @@ interface SheetRowProps {
 
 function SheetRow({
   sheet,
-  dropCount,
   active,
   onSelect,
   isRenaming,
@@ -158,6 +178,10 @@ function SheetRow({
 }: SheetRowProps) {
   const renameSheet = useRoundStore((s) => s.renameSheet);
   const setRenamingSheet = useRoundStore((s) => s.setRenamingSheet);
+  const labelDrops = useRoundStore((s) => s.labelDrops);
+  const dropCount = useRoundStore(
+    (s) => labelDrops ? selectSheetDropCount(s.round, sheet.id) : 0
+  );
   const inputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState(sheet.title);
 

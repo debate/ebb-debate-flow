@@ -12,12 +12,15 @@ import SaveStatus from "./SaveStatus";
 import { teamCode } from "@/lib/model/teamCode";
 
 export default function RoundHeader() {
-  const round = useRoundStore((s) => s.round);
+  const role = useRoundStore((s) => s.round?.role);
+  const scouting = useRoundStore((s) => s.round?.scouting, (next, prev) => {
+    if (next === prev) return true;
+    if (!next || !prev) return false;
+    return JSON.stringify(next) === JSON.stringify(prev);
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  if (!round) return null;
-
-  const { role, scouting } = round;
+  if (!role || !scouting) return null;
 
   const affCode =
     teamCode(scouting.affSchool ?? "", scouting.aff.first, scouting.aff.second) || "Aff";

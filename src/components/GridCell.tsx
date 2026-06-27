@@ -38,6 +38,12 @@ export default function GridCell({
   const labelDrops = useRoundStore((s) => s.labelDrops);
   const moveActive = useRoundStore((s) => s.moveSource !== null);
 
+  const [localText, setLocalText] = useState(node.text);
+
+  useEffect(() => {
+    setLocalText(node.text);
+  }, [node.text]);
+
   const isSelected =
     selection?.sheetId === sheetId &&
     selection?.speechId === speechId &&
@@ -79,8 +85,9 @@ export default function GridCell({
         className="cell-input"
         rows={1}
         spellCheck={false}
-        value={node.text}
+        value={localText}
         onChange={(e) => {
+          setLocalText(e.target.value);
           updateNodeText(node.id, e.target.value);
           autoHeight();
         }}
@@ -90,7 +97,7 @@ export default function GridCell({
             inputRef.current?.blur();
             return;
           }
-          if (e.key === "Backspace" && node.text === "") {
+          if (e.key === "Backspace" && localText === "") {
             e.preventDefault();
             executeCommand("cell.clear");
             return;
