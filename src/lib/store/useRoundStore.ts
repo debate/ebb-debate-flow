@@ -64,6 +64,7 @@ export interface RoundState {
     quickSwitcherOpen: boolean;
     settingsOpen: boolean;
     cheatsheetOpen: boolean;
+    guideOpen: boolean;
     renamingSheetId: string | null;
     infoOpen: boolean;
     /**
@@ -157,6 +158,7 @@ export interface RoundActions {
     setQuickSwitcherOpen(open: boolean): void;
     setSettingsOpen(open: boolean): void;
     setCheatsheetOpen(open: boolean): void;
+    setGuideOpen(open: boolean): void;
     setRenamingSheet(id: string | null): void;
     setInfoOpen(open: boolean): void;
     setMoveSource(id: string | null): void;
@@ -265,6 +267,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     quickSwitcherOpen: false,
     settingsOpen: false,
     cheatsheetOpen: false,
+    guideOpen: false,
     renamingSheetId: null,
     infoOpen: false,
     moveSource: null,
@@ -294,6 +297,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             quickSwitcherOpen: false,
             settingsOpen: false,
             cheatsheetOpen: false,
+            guideOpen: false,
             renamingSheetId: null,
             infoOpen: false,
             moveSource: null,
@@ -797,6 +801,11 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     // ── setCheatsheetOpen ──────────────────────────────────────────────────────
     setCheatsheetOpen(open) {
         set({ cheatsheetOpen: open });
+    },
+
+    // ── setGuideOpen ───────────────────────────────────────────────────────────
+    setGuideOpen(open) {
+        set({ guideOpen: open });
     },
 
     // ── setRenamingSheet ───────────────────────────────────────────────────────

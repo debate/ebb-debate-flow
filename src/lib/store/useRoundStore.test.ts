@@ -329,3 +329,13 @@ describe("removeSheet + restoreSheet", () => {
         expect(round.sheets.filter((s) => s.id === sheetId)).toHaveLength(1);
     });
 });
+
+describe("guide open state", () => {
+  it("defaults to closed and toggles", () => {
+    expect(useRoundStore.getState().guideOpen).toBe(false);
+    useRoundStore.getState().setGuideOpen(true);
+    expect(useRoundStore.getState().guideOpen).toBe(true);
+    useRoundStore.getState().setGuideOpen(false);
+    expect(useRoundStore.getState().guideOpen).toBe(false);
+  });
+});
