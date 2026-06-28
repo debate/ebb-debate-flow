@@ -23,7 +23,7 @@ function Kbd({ cmd, k }: { cmd?: CommandId; k?: string }) {
 
 /** Small markup sketch of the grid model used in the Anatomy section. */
 function GridDiagram() {
-    const speeches = ["1AC", "1NC", "2AC", "2NC"];
+    const speeches = ["1NC", "2AC", "2NC", "1AR"];
     return (
         <div className="border-border my-3 overflow-hidden rounded-md border">
             <div className="border-border text-muted-foreground grid grid-cols-4 border-b bg-zinc-50 text-[11px] font-semibold">
