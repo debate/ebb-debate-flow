@@ -14,8 +14,8 @@
 
 import { isMacPlatform } from "@/lib/platform";
 
-import { eventToChord } from "./resolve";
 import { reservedChords } from "./reserved";
+import { eventToChord } from "./resolve";
 
 /**
  * Native editing chords that must pass through to the browser when the user

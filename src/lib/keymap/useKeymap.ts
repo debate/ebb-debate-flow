@@ -6,8 +6,8 @@ import { executeCommand } from "@/lib/commands/commands";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import { effectiveKeymap as computeEffectiveKeymap } from "./effective";
-import { GRAB_BINDINGS } from "./presets";
 import { shouldIntercept, isTextEntryFocus, isNativeEditingChord } from "./intercept";
+import { GRAB_BINDINGS } from "./presets";
 import { resolveCommand, eventToChord } from "./resolve";
 
 /** Returns the keymap currently in effect: flat preset merged with user overrides. */
