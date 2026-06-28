@@ -232,6 +232,7 @@ body {
    overrides the shared 1px gridline without a layout shift. */
 .flow td.cell-band-start {
     border-top: 2px solid var(--band-divider);
+    transition: border-top-color 200ms var(--ease-out-quart);
 }
 
 /* Inaccessible empty cell — no argument can be placed here (no parent to its
@@ -282,26 +283,36 @@ body {
 
 /* Drag-and-drop feedback ----------------------------------------------------
    Dashed violet target (distinct from the solid selected outline) + faint wash
-   so it's obvious where a dragged argument will land. */
+   so it's obvious where a dragged argument will land. The outline transition
+   is smooth so hovering between cells doesn't flash. */
 .flow td.drag-over {
     outline: 2px dashed var(--sel);
     outline-offset: -2px;
     background: color-mix(in srgb, var(--sel) 8%, transparent);
-    transition: background 150ms var(--ease-out-quart);
+    transition:
+        background 150ms var(--ease-out-quart),
+        outline 150ms var(--ease-out-quart);
 }
 
-/* The argument being dragged dims while in flight. */
+/* The argument being dragged dims + lifts slightly in flight. Scale gives the
+   tactile "picked up" feel; opacity confirms it's in motion. */
 .arg-dragging {
     opacity: 0.4;
-    transition: opacity 150ms var(--ease-out-quart);
+    transform: scale(1.02);
+    cursor: grabbing;
+    transition:
+        opacity 150ms var(--ease-out-quart),
+        transform 150ms var(--ease-out-quart);
 }
 
-/* Confirm a reparent: the moved argument pulses violet once in its new home. */
+/* Confirm a reparent: the moved argument pulses violet once in its new home.
+   Staggered per-column so a subtree-drop cascades left-to-right (parent
+   flashes first, then children — reads as "settling into place"). */
 @keyframes cell-flash {
-    from {
-        background: color-mix(in srgb, var(--sel) 28%, transparent);
+    0% {
+        background: color-mix(in srgb, var(--sel) 32%, transparent);
     }
-    to {
+    100% {
         background: transparent;
     }
 }
@@ -309,10 +320,24 @@ body {
     animation: cell-flash 600ms var(--ease-out-quart);
 }
 
+/* Subtree flash stagger: delay proportional to the column index so a reparented
+   argument tree cascades from root → response → counter-response. Max 3
+   stagger steps (most flows have ≤4 columns). */
+.flow td.cell-flash.col-stagger-1 {
+    animation-delay: 80ms;
+}
+.flow td.cell-flash.col-stagger-2 {
+    animation-delay: 160ms;
+}
+.flow td.cell-flash.col-stagger-3 {
+    animation-delay: 240ms;
+}
+
 /* Keyboard move mode: the grabbed argument's cell dims while it's "in hand",
    mirroring the mouse drag's .arg-dragging lift. */
 .flow td.cell-moving {
     opacity: 0.4;
+    transition: opacity 150ms var(--ease-out-quart);
 }
 
 /* Move-mode status banner — compact, non-intrusive, announced via aria-live. */
@@ -381,6 +406,7 @@ body {
     min-width: 15px;
     opacity: 0.7;
     font-weight: 700;
+    font-variant-numeric: tabular-nums;
 }
 
 /* Original argument cell header */

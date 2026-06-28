@@ -210,17 +210,123 @@ describe("subtree", () => {
         expect(res.nodes.find((m) => m.id === "c")!.row).toBe(2);
     });
 
-    it("translateSubtree rejects a collision with a non-subtree node", () => {
+    it("translateSubtree ripples the blocker down on collision instead of rejecting", () => {
         const nodes = [n("root", "a", 0), n("blocker", "a", 2)];
         const res = translateSubtree(nodes, speeches, "root", 0, 2);
-        expect(res.ok).toBe(false);
-        expect(res.nodes).toEqual(nodes);
+        expect(res.ok).toBe(true);
+        // root moves from row 0 → row 2; blocker (at row 2) is pushed down by
+        // the subtree span (1 row) to row 3.
+        expect(res.nodes.find((m) => m.id === "root")!.row).toBe(2);
+        expect(res.nodes.find((m) => m.id === "blocker")!.row).toBe(3);
+    });
+
+    it("translateSubtree ripple preserves the moving subtree's internal structure", () => {
+        // root at a:0 with child at b:0; blocker at a:2. Moving the subtree
+        // down 2 rows should ripple the blocker to row 4 (span = 1 row since
+        // both root and child land on the same row).
+        const nodes = [
+            n("root", "a", 0),
+            { ...n("child", "b", 0), parentId: "root" },
+            n("blocker", "a", 2),
+        ];
+        const res = translateSubtree(nodes, speeches, "root", 0, 2);
+        expect(res.ok).toBe(true);
+        expect(res.nodes.find((m) => m.id === "root")!.row).toBe(2);
+        expect(res.nodes.find((m) => m.id === "child")!.row).toBe(2);
+        expect(res.nodes.find((m) => m.id === "blocker")!.row).toBe(3);
     });
 
     it("translateSubtree rejects moving out of column bounds", () => {
         const nodes = [n("root", "c", 0)];
         const res = translateSubtree(nodes, speeches, "root", 1, 0);
         expect(res.ok).toBe(false);
+    });
+
+    it("translateSubtree rejects moving a non-root node to its parent's column", () => {
+        // child at b:0 (parent root at a:0). Moving the child subtree
+        // (child only, not root) -1 column puts child in col a. Its parent
+        // (root) is in col a. parent.col(a=0) >= child.col(a=0). Invalid.
+        const nodes = [n("root", "a", 0), { ...n("child", "b", 0), parentId: "root" }];
+        const res = translateSubtree(nodes, speeches, "child", -1, 0);
+        expect(res.ok).toBe(false);
+    });
+
+    it("translateSubtree rejects a multi-row subtree move that would exceed column bounds", () => {
+        // root at b:0 with child at c:0. Moving +1 would put child off the
+        // last column. Rejected before any mutation.
+        const nodes = [n("root", "b", 0), { ...n("child", "c", 0), parentId: "root" }];
+        const res = translateSubtree(nodes, speeches, "root", 1, 0);
+        expect(res.ok).toBe(false);
+    });
+
+    it("translateSubtree allows moving a root subtree to any valid position", () => {
+        // root at a:0 with child at b:0. Moving the whole subtree +1 column
+        // puts root in b and child in c — still parent.col < child.col. Valid.
+        const nodes = [n("root", "a", 0), { ...n("child", "b", 0), parentId: "root" }];
+        const res = translateSubtree(nodes, speeches, "root", 1, 0);
+        expect(res.ok).toBe(true);
+        expect(res.nodes.find((m) => m.id === "root")!.speechId).toBe("b");
+        expect(res.nodes.find((m) => m.id === "child")!.speechId).toBe("c");
+    });
+
+    it("translateSubtree no-op on zero delta", () => {
+        const nodes = [n("root", "a", 0)];
+        const res = translateSubtree(nodes, speeches, "root", 0, 0);
+        expect(res.ok).toBe(true);
+        expect(res.nodes).toEqual(nodes);
+    });
+
+    it("translateSubtree alignment: no two nodes share a cell after move", () => {
+        const nodes = [
+            n("root", "a", 0),
+            { ...n("child", "b", 0), parentId: "root" },
+            n("blocker1", "a", 2),
+            n("blocker2", "b", 2),
+        ];
+        const res = translateSubtree(nodes, speeches, "root", 0, 2);
+        expect(res.ok).toBe(true);
+        const cells = new Set(res.nodes.map((n) => `${n.sheetId}:${n.speechId}:${n.row}`));
+        expect(cells.size).toBe(res.nodes.length);
+    });
+
+    it("translateSubtree alignment: parent<col<child invariant holds for all valid moves", () => {
+        const nodes = [
+            n("root", "a", 0),
+            { ...n("child", "b", 0), parentId: "root" },
+            { ...n("grandchild", "c", 0), parentId: "child" },
+        ];
+        for (let dCol = -2; dCol <= 2; dCol++) {
+            for (let dRow = -2; dRow <= 3; dRow++) {
+                const res = translateSubtree(nodes, speeches, "root", dCol, dRow);
+                if (!res.ok) continue;
+                const colOf2 = new Map(
+                    res.nodes.map((n) => [n.id, speeches.findIndex((s) => s.id === n.speechId)]),
+                );
+                for (const nn of res.nodes) {
+                    if (nn.parentId === null) continue;
+                    const pc = colOf2.get(nn.parentId);
+                    const cc = colOf2.get(nn.id);
+                    if (pc !== undefined && cc !== undefined) {
+                        expect(pc).toBeLessThan(cc);
+                    }
+                }
+                const cells = new Set(res.nodes.map((n) => `${n.speechId}:${n.row}`));
+                expect(cells.size).toBe(res.nodes.length);
+            }
+        }
+    });
+
+    it("translateSubtree alignment: ripple clears exact gap for multi-row subtree", () => {
+        const nodes = [
+            n("arg1", "a", 0),
+            { ...n("resp1", "b", 0), parentId: "arg1" },
+            n("blocker", "a", 2),
+        ];
+        const res = translateSubtree(nodes, speeches, "arg1", 0, 2);
+        expect(res.ok).toBe(true);
+        expect(res.nodes.find((m) => m.id === "arg1")!.row).toBe(2);
+        expect(res.nodes.find((m) => m.id === "resp1")!.row).toBe(2);
+        expect(res.nodes.find((m) => m.id === "blocker")!.row).toBe(3);
     });
 });
 

@@ -284,7 +284,55 @@ export function descendantIds(nodes: ArgumentNode[], rootId: string): Set<string
     return out;
 }
 
-/** Translate a subtree by (dCol, dRow); no-op + ok:false on collision/bounds. */
+/**
+ * Invariant guard: after a move, no parent may share or come AFTER any of
+ * its descendants in column order. The flow model requires
+ * parent.col < child.col for every parent→child edge. A move that would
+ * violate this (e.g. dragging a parent into its own child's column or
+ * later) is rejected before any mutation.
+ *
+ * We validate against the *post-move* column assignment so callers get a
+ * single pre-check instead of discovering the violation after commit.
+ */
+function violatesColumnInvariant(
+    nodes: ArgumentNode[],
+    speeches: Speech[],
+    moved: Map<string, { speechId: string; row: number }>,
+): boolean {
+    // Build a column-lookup that reflects the proposed move.
+    const effectiveCol = new Map<string, number>();
+    for (const n of nodes) {
+        const dest = moved.get(n.id);
+        effectiveCol.set(n.id, colIndexOf(speeches, dest ? dest.speechId : n.speechId));
+    }
+    // Check every parent→child edge (only within the sheet matters).
+    for (const n of nodes) {
+        if (n.parentId === null) continue;
+        const parentCol = effectiveCol.get(n.parentId);
+        const childCol = effectiveCol.get(n.id);
+        if (parentCol === undefined || childCol === undefined) continue;
+        // Parent must be in a STRICTLY earlier column than the child.
+        if (parentCol >= childCol) return true;
+    }
+    return false;
+}
+
+/**
+ * Translate a subtree by (dCol, dRow).
+ *
+ * Alignment guarantee: every node in the moved subtree receives the same
+ * (dCol, dRow) delta, so the internal parent→child geometry is preserved
+ * exactly. A parent and all its children maintain their relative positions.
+ *
+ * Collision handling: when the target cells are occupied by non-subtree nodes,
+ * the sheet is rippled down (from the minimum targeted row) by the full span
+ * of the moving subtree, making room. The moving subtree itself is excluded
+ * from the ripple so it lands cleanly at the target.
+ *
+ * Returns { nodes, ok: false } when the move is impossible (out of column
+ * bounds, negative rows, or would violate the parent-col < child-col
+ * invariant that every flow relies on).
+ */
 export function translateSubtree(
     nodes: ArgumentNode[],
     speeches: Speech[],
@@ -297,7 +345,10 @@ export function translateSubtree(
     if (!root) return { nodes, ok: false };
     const sheetId = root.sheetId;
 
-    // Compute proposed coords; bail on out-of-bounds columns.
+    // No-op: zero delta means nothing changes, succeed without mutation.
+    if (dCol === 0 && dRow === 0) return { nodes, ok: true };
+
+    // Compute proposed coords; bail on out-of-bounds columns / negative rows.
     const moved = new Map<string, { speechId: string; row: number }>();
     for (const n of nodes) {
         if (!subtree.has(n.id)) continue;
@@ -307,14 +358,43 @@ export function translateSubtree(
         moved.set(n.id, { speechId: speeches[col].id, row });
     }
 
-    // Reject if any destination collides with a node OUTSIDE the subtree.
-    for (const [id, dest] of moved) {
-        const occ = occupantAt(nodes, sheetId, dest.speechId, dest.row);
-        if (occ && !subtree.has(occ.id) && occ.id !== id) return { nodes, ok: false };
+    // Structural invariant: after the move, every parent must still be in a
+    // strictly earlier column than each of its children. Reject the move
+    // before any mutation if this would break.
+    if (violatesColumnInvariant(nodes, speeches, moved)) return { nodes, ok: false };
+
+    // Build a fast lookup for cell occupancy. O(n) once, then O(1) per check.
+    const occupancy = new Map<string, ArgumentNode>();
+    for (const n of nodes) {
+        if (n.sheetId !== sheetId) continue;
+        occupancy.set(`${n.speechId}:${n.row}`, n);
+    }
+
+    // Check for collisions at the destination: non-subtree nodes occupying
+    // any of the cells the moving subtree wants.
+    let hasCollision = false;
+    for (const [, dest] of moved) {
+        const occ = occupancy.get(`${dest.speechId}:${dest.row}`);
+        if (occ && !subtree.has(occ.id)) {
+            hasCollision = true;
+            break;
+        }
+    }
+
+    // If there are collisions, ripple the entire sheet (outside the moving
+    // subtree) down from the minimum targeted row by the subtree's vertical
+    // span. This clears a gap the exact size of the moving band.
+    let resolved = nodes;
+    if (hasCollision) {
+        const targetRows = [...moved.values()].map((v) => v.row);
+        const minTargetRow = Math.min(...targetRows);
+        const maxTargetRow = Math.max(...targetRows);
+        const span = maxTargetRow - minTargetRow + 1;
+        resolved = rippleDown(nodes, sheetId, minTargetRow, span, subtree);
     }
 
     return {
-        nodes: nodes.map((n) => (moved.has(n.id) ? { ...n, ...moved.get(n.id)! } : n)),
+        nodes: resolved.map((n) => (moved.has(n.id) ? { ...n, ...moved.get(n.id)! } : n)),
         ok: true,
     };
 }

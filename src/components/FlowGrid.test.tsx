@@ -373,7 +373,7 @@ describe("FlowGrid — coordinate-based rendering", () => {
         expect(bAfter.row).toBe(1);
     });
 
-    it("dropping a node onto an occupied cell is rejected (collision)", () => {
+    it("dropping a node onto an occupied cell ripples the occupant down", () => {
         const fmt = makeFormatByKey("policy");
         useRoundStore.getState().createRound({ role: "aff", format: fmt });
         const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
@@ -409,13 +409,13 @@ describe("FlowGrid — coordinate-based rendering", () => {
         fireEvent.dragOver(dropEl, { dataTransfer });
         fireEvent.drop(dropEl, { dataTransfer });
 
-        // A stays in place (no re-parenting, no move).
+        // A moves onto B's cell; B is rippled down by the subtree span (1 row).
         const aAfter = useRoundStore.getState().round!.nodes.find((n) => n.id === idA)!;
         const bAfter = useRoundStore.getState().round!.nodes.find((n) => n.id === idB)!;
-        expect(aAfter.speechId).toBe(s1AC);
+        expect(aAfter.speechId).toBe(s1NC);
         expect(aAfter.row).toBe(0);
         expect(bAfter.speechId).toBe(s1NC);
-        expect(bAfter.row).toBe(0);
+        expect(bAfter.row).toBe(1);
     });
 });
 

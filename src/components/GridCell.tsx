@@ -132,7 +132,7 @@ export default function GridCell({
     return (
         <span
             draggable
-            className={isDragging ? "arg-dragging" : undefined}
+            className={`transition-transform ${isDragging ? "arg-dragging" : "active:scale-[0.96]"}`}
             onDragStart={(e) => {
                 e.dataTransfer.setData("text/df-node", node.id);
                 e.dataTransfer.effectAllowed = "move";
@@ -171,7 +171,12 @@ export default function GridCell({
                 }
             }}
             onClick={handleClick}
-            style={{ display: "block", width: "100%", cursor: "pointer" }}
+            style={{
+                display: "block",
+                width: "100%",
+                cursor: isDragging ? "grabbing" : "pointer",
+                willChange: isDragging ? "transform, opacity" : undefined,
+            }}
         >
             {autoNumber && num !== null && <span className="arg-num">{num}.</span>}
             {showExtended && <span className="arg-ext">↳</span>}
