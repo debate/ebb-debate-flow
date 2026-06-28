@@ -2,9 +2,9 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { makeFormatByKey } from "@/lib/format/presets";
 import { useRoundStore } from "@/lib/store/useRoundStore";
-import { TooltipProvider } from "@/components/ui/tooltip";
 
 import ExportMenu from "./ExportMenu";
 
@@ -23,7 +23,7 @@ describe("ExportMenu", () => {
         render(
             <TooltipProvider>
                 <ExportMenu />
-            </TooltipProvider>
+            </TooltipProvider>,
         );
         await user.click(screen.getByTestId("export-btn"));
         expect(screen.getByTestId("export-json")).toBeInTheDocument();
@@ -36,7 +36,7 @@ describe("ExportMenu", () => {
         render(
             <TooltipProvider>
                 <ExportMenu />
-            </TooltipProvider>
+            </TooltipProvider>,
         );
         await user.click(screen.getByTestId("export-btn"));
         await user.click(screen.getByTestId("export-json"));
@@ -49,7 +49,7 @@ describe("ExportMenu", () => {
         render(
             <TooltipProvider>
                 <ExportMenu />
-            </TooltipProvider>
+            </TooltipProvider>,
         );
         await user.click(screen.getByTestId("export-btn"));
         await user.click(screen.getByTestId("export-excel"));

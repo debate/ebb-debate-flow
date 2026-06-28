@@ -281,12 +281,18 @@ function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete
             >
                 {titleTruncated ? (
                     <Tip label={sheet.title}>
-                        <span ref={titleRef} className="overflow-hidden text-ellipsis whitespace-nowrap">
+                        <span
+                            ref={titleRef}
+                            className="overflow-hidden text-ellipsis whitespace-nowrap"
+                        >
                             {sheet.title}
                         </span>
                     </Tip>
                 ) : (
-                    <span ref={titleRef} className="overflow-hidden text-ellipsis whitespace-nowrap">
+                    <span
+                        ref={titleRef}
+                        className="overflow-hidden text-ellipsis whitespace-nowrap"
+                    >
                         {sheet.title}
                     </span>
                 )}
