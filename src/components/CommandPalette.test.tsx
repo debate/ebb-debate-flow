@@ -63,6 +63,14 @@ describe("CommandPalette", () => {
         expect(s.commandPaletteOpen).toBe(false);
     });
 
+    it("closes when its own self-listed command is chosen", async () => {
+        setup();
+        render(<CommandPalette />);
+        await userEvent.type(screen.getByTestId("command-palette-input"), "command palette");
+        await userEvent.keyboard("{Enter}");
+        expect(useRoundStore.getState().commandPaletteOpen).toBe(false);
+    });
+
     it("closes on Escape without running a command", async () => {
         setup();
         render(<CommandPalette />);

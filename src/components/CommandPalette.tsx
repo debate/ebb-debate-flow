@@ -44,7 +44,7 @@ function CommandPaletteInner() {
         inputRef.current?.focus();
     }, []);
 
-    // Key hints read the live keymap; recompute once per mount.
+    // Stable label haystack for fuzzy search; commands are fixed at module load.
     const labelHaystack = useMemo(() => ALL_COMMANDS.map((c) => c.label), []);
 
     const rows = useMemo<Row[]>(() => {
@@ -81,8 +81,10 @@ function CommandPaletteInner() {
     }, [selectedIndex, rows]);
 
     function select(row: Row) {
-        setOpen(false);
+        // Run first, then close: matches SearchPalette ordering and ensures the
+        // self-listed "Command palette" row closes rather than re-opening.
         executeCommand(row.id);
+        setOpen(false);
     }
 
     function onKeyDown(e: React.KeyboardEvent) {
