@@ -87,8 +87,10 @@ export interface RoundState {
      * get mislabeled as dropped.
      *
      * When the target cell was occupied, the surrounding cells are shifted down
-     * immediately so the target reads as empty; `rippled` records that so the shift
-     * can be reversed if the spawn is abandoned without typing. The shift is applied
+     * immediately so the target reads as empty. `preSpawnNodes` captures the
+     * exact node array before that shift so both commit and abandon can restore
+     * the pre-spawn flow without replaying the shift in reverse (which would be
+     * fragile when the ripple excluded the parent chain). The shift is applied
      * without bumping `round.updatedAt`, so it stays out of autosave and undo
      * history until commit.
      */
@@ -99,7 +101,8 @@ export interface RoundState {
         /** sibling → the current node's parent; response → the current node. */
         parentId: string | null;
         kind: "sibling" | "response";
-        rippled: boolean;
+        /** The node array immediately before the transient shift; undefined when no shift was needed. */
+        preSpawnNodes: ArgumentNode[] | undefined;
     } | null;
     sidebarCollapsed: boolean;
 }
@@ -321,9 +324,9 @@ function armSpawn(
     const placed = placeForSpawn(round.nodes, selection.sheetId, speeches, cur, kind);
     if (!placed) return null;
     // placeForSpawn returns the same array reference when no shift was needed.
-    const rippled = placed.nodes !== round.nodes;
+    const shifted = placed.nodes !== round.nodes;
     set({
-        round: rippled ? { ...round, nodes: placed.nodes } : round,
+        round: shifted ? { ...round, nodes: placed.nodes } : round,
         selection: {
             sheetId: selection.sheetId,
             speechId: placed.speechId,
@@ -335,7 +338,7 @@ function armSpawn(
             row: placed.row,
             parentId: kind === "sibling" ? cur.parentId : cur.id,
             kind,
-            rippled,
+            preSpawnNodes: shifted ? round.nodes : undefined,
         },
     });
     return null;
@@ -570,7 +573,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     commitPendingSpawn(text) {
         const { round, pendingSpawn, past } = get();
         if (!round || !pendingSpawn) return null;
-        const { sheetId, speechId, row, parentId, rippled } = pendingSpawn;
+        const { sheetId, speechId, row, parentId, preSpawnNodes } = pendingSpawn;
         const { nodes, node } = placeNodeAt(round.nodes, {
             sheetId,
             speechId,
@@ -580,10 +583,10 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         });
         // One undo step back to the pre-spawn flow. The transient shift was applied
         // outside history, so the undo target is the round BEFORE that shift —
-        // reconstruct it by reversing the ripple.
-        const preSpawn = rippled
-            ? { ...round, nodes: rippleUp(round.nodes, sheetId, row, 1) }
-            : round;
+        // restore the exact pre-spawn nodes directly (reversing the ripple by
+        // replaying it would be fragile when the ripple excluded the parent chain).
+        const preSpawn =
+            preSpawnNodes !== undefined ? { ...round, nodes: preSpawnNodes } : round;
         set({
             round: { ...round, nodes, updatedAt: Date.now() },
             past: [...past, preSpawn].slice(-UNDO_DEPTH),
@@ -597,14 +600,12 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     abandonPendingSpawn() {
         const { round, pendingSpawn } = get();
         if (!pendingSpawn) return;
-        // Reverse the transient shift (if any) without bumping updatedAt, then drop
-        // the intent. The flow returns to exactly its pre-spawn state.
-        if (round && pendingSpawn.rippled) {
+        // Restore the exact pre-spawn nodes (if any shift was applied) without
+        // bumping updatedAt, then drop the intent. The flow returns to exactly
+        // its pre-spawn state.
+        if (round && pendingSpawn.preSpawnNodes !== undefined) {
             set({
-                round: {
-                    ...round,
-                    nodes: rippleUp(round.nodes, pendingSpawn.sheetId, pendingSpawn.row, 1),
-                },
+                round: { ...round, nodes: pendingSpawn.preSpawnNodes },
                 pendingSpawn: null,
             });
         } else {

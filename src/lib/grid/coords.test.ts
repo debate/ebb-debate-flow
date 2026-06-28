@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import type { ArgumentNode, Speech } from "@/lib/model/types";
 
-import { colIndexOf, occupantAt, maxRow, rippleDown, rippleUp } from "./coords";
+import { colIndexOf, occupantAt, maxRow, rippleDown, rippleUp, ancestorIds, descendantIds, translateSubtree } from "./coords";
 
 const sp = (id: string): Speech => ({ id, name: id, side: "aff", seconds: 0 });
 const speeches = [sp("a"), sp("b"), sp("c")];
@@ -45,6 +45,14 @@ describe("coords", () => {
         expect(out.find((m) => m.id === "z")!.row).toBe(3);
     });
 
+    it("rippleDown with exclude set skips excluded node ids", () => {
+        const nodes = [n("x", "a", 0), n("y", "b", 1), n("z", "a", 2)];
+        const out = rippleDown(nodes, "s1", 1, 1, new Set(["y"]));
+        expect(out.find((m) => m.id === "x")!.row).toBe(0);
+        expect(out.find((m) => m.id === "y")!.row).toBe(1); // excluded
+        expect(out.find((m) => m.id === "z")!.row).toBe(3);
+    });
+
     it("rippleUp shifts rows >= fromRow up, leaving lower rows alone", () => {
         const nodes = [n("x", "a", 0), n("y", "b", 2), n("z", "a", 3)];
         const out = rippleUp(nodes, "s1", 2);
@@ -61,7 +69,7 @@ describe("coords", () => {
     });
 });
 
-import { spawnTarget, placeForSpawn, descendantIds, translateSubtree } from "./coords";
+import { spawnTarget, placeForSpawn } from "./coords";
 
 describe("spawn placement", () => {
     it("sibling targets next row, same column", () => {
@@ -116,12 +124,62 @@ describe("spawn placement", () => {
         expect(res.nodes.find((m) => m.id === "A")!.row).toBe(0);
         expect(res.nodes.find((m) => m.id === "B")!.row).toBe(0);
     });
+
+    it("response ripples an unrelated occupant but keeps the parent on its row", () => {
+        // A at (a,0), bare node B at (b,0). Responding to A targets (b,0) which is
+        // occupied by an unrelated node. B should be pushed down; A stays on row 0;
+        // the new response lands at (b,0) beside A — NOT above A.
+        const nodes = [n("A", "a", 0), n("B", "b", 0)];
+        const res = placeForSpawn(nodes, "s1", speeches, nodes[0], "response")!;
+        expect({ speechId: res.speechId, row: res.row }).toEqual({ speechId: "b", row: 0 });
+        // A stays on row 0.
+        expect(res.nodes.find((m) => m.id === "A")!.row).toBe(0);
+        // B pushed down to row 1.
+        expect(res.nodes.find((m) => m.id === "B")!.row).toBe(1);
+    });
+
+    it("response ripples the parent's own existing response but keeps parent fixed", () => {
+        // A at (a,0) with existing response R1 at (b,0). Responding to A again:
+        // R1 gets pushed down, A stays on row 0, new response lands at (b,0).
+        const nodes = [n("A", "a", 0), cnResp("R1", "b", 0, "A")];
+        const res = placeForSpawn(nodes, "s1", speeches, nodes[0], "response")!;
+        expect({ speechId: res.speechId, row: res.row }).toEqual({ speechId: "b", row: 0 });
+        // A stays on row 0.
+        expect(res.nodes.find((m) => m.id === "A")!.row).toBe(0);
+        // R1 pushed down to row 1.
+        expect(res.nodes.find((m) => m.id === "R1")!.row).toBe(1);
+    });
 });
 
 /** Node with an explicit parent, local to the spawn-placement block. */
 const cnResp = (id: string, speechId: string, row: number, parentId: string): ArgumentNode => ({
     ...n(id, speechId, row),
     parentId,
+});
+
+describe("ancestorIds", () => {
+    it("collects the node and its parent chain up to root", () => {
+        const nodes = [
+            n("root", "a", 0),
+            { ...n("c", "b", 0), parentId: "root" },
+            { ...n("gc", "c", 0), parentId: "c" },
+            n("other", "a", 1),
+        ];
+        expect(ancestorIds(nodes, "gc")).toEqual(new Set(["gc", "c", "root"]));
+    });
+
+    it("returns just the node when it has no parent", () => {
+        const nodes = [n("root", "a", 0), n("other", "b", 0)];
+        expect(ancestorIds(nodes, "root")).toEqual(new Set(["root"]));
+    });
+
+    it("is cycle-guarded", () => {
+        const a = { ...n("A", "a", 0), parentId: "B" };
+        const b = { ...n("B", "b", 0), parentId: "A" };
+        const nodes = [a, b];
+        // Should not infinite-loop; collects both.
+        expect(ancestorIds(nodes, "A")).toEqual(new Set(["A", "B"]));
+    });
 });
 
 describe("subtree", () => {

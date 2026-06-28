@@ -154,9 +154,14 @@ export function rippleDown(
     sheetId: string,
     fromRow: number,
     by = 1,
+    exclude?: Set<string>,
 ): ArgumentNode[] {
     return nodes.map((n) =>
-        n.sheetId === sheetId && n.row >= fromRow ? { ...n, row: n.row + by } : n,
+        n.sheetId === sheetId &&
+        n.row >= fromRow &&
+        (exclude === undefined || !exclude.has(n.id))
+            ? { ...n, row: n.row + by }
+            : n,
     );
 }
 
@@ -222,9 +227,13 @@ export function placeForSpawn(
     // A response lands in the next column ON THE PARENT'S ROW — that row IS meant
     // to hold an argument and its responses together. So a response only needs its
     // own destination CELL free; the row being filled by the parent (or the
-    // parent's own parent in an earlier column) is the normal, desired state. If
-    // we rippled on row occupancy here, rippleDown would shift the parent down a
-    // row while the new response stayed put, leaving the response ABOVE its parent.
+    // parent's own parent in an earlier column) is the normal, desired state.
+    //
+    // When the destination cell IS occupied, ripple — but EXCLUDE the parent
+    // chain (the current node and its ancestors) from the shift. The parent
+    // stays on its row and the response lands beside it; only unrelated nodes
+    // (or the parent's own existing responses) get pushed down. Rippling the
+    // parent too would leave the new response one row ABOVE its parent.
     //
     // A sibling lands on a fresh row below the current subtree's band, so it
     // needs that whole row free — ripple when any other node occupies it.
@@ -234,9 +243,30 @@ export function placeForSpawn(
             : nodes.some(
                   (n) => n.sheetId === sheetId && n.row === target.row && n.id !== current.id,
               );
-    const next = needsRipple ? rippleDown(nodes, sheetId, target.row, 1) : nodes;
+    const next =
+        needsRipple && kind === "response"
+            ? rippleDown(nodes, sheetId, target.row, 1, ancestorIds(nodes, current.id))
+            : needsRipple
+              ? rippleDown(nodes, sheetId, target.row, 1)
+              : nodes;
     return { nodes: next, speechId: target.speechId, row: target.row };
 }
+
+/** A node plus all its ancestors (parent chain up to root), cycle-guarded. */
+export function ancestorIds(nodes: ArgumentNode[], nodeId: string): Set<string> {
+    const byId = new Map<string, ArgumentNode>();
+    for (const n of nodes) byId.set(n.id, n);
+    const out = new Set<string>();
+    let current: string | undefined = nodeId;
+    while (current !== undefined) {
+        if (out.has(current)) break;
+        out.add(current);
+        const node = byId.get(current);
+        current = node?.parentId ?? undefined;
+    }
+    return out;
+}
+
 
 /** Root id + all transitive descendant ids (cycle-guarded). */
 export function descendantIds(nodes: ArgumentNode[], rootId: string): Set<string> {

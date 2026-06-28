@@ -312,7 +312,7 @@ describe("deferred spawn", () => {
         // arg2 was pushed down to make room; arg1 stayed.
         expect(after.round!.nodes.find((n) => n.id === arg2)!.row).toBe(2);
         expect(after.round!.nodes.find((n) => n.id === arg1)!.row).toBe(0);
-        expect(after.pendingSpawn).toMatchObject({ row: 1, rippled: true });
+        expect(after.pendingSpawn).toMatchObject({ row: 1, preSpawnNodes: expect.any(Array) });
         // The shift is transient: it neither bumps updatedAt (no autosave) nor
         // grows the undo stack.
         expect(after.round!.updatedAt).toBe(updatedAtBefore);
