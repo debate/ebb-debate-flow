@@ -12,27 +12,27 @@ import { effectiveKeymap } from "./useKeymap";
 
 const KEY_LABELS: Record<string, string> = {
     Escape: "Esc",
-    ArrowUp: "↑",
-    ArrowDown: "↓",
-    ArrowLeft: "←",
-    ArrowRight: "→",
-    Enter: "↩",
+    ArrowUp: "Up",
+    ArrowDown: "Down",
+    ArrowLeft: "Left",
+    ArrowRight: "Right",
+    Enter: "Enter",
     Delete: "Del",
-    Backspace: "⌫",
-    Tab: "⇥",
+    Backspace: "Backspace",
+    Tab: "Tab",
 };
 
 export function prettyChord(chord: string): string {
     return chord
         .split("+")
         .map((part) => {
-            if (part === "Meta") return "⌘";
-            if (part === "Ctrl") return "⌃";
-            if (part === "Alt") return "⌥";
-            if (part === "Shift") return "⇧";
+            if (part === "Meta") return "Cmd";
+            if (part === "Ctrl") return "Ctrl";
+            if (part === "Alt") return "Alt";
+            if (part === "Shift") return "Shift";
             return KEY_LABELS[part] ?? part;
         })
-        .join("");
+        .join("-");
 }
 
 /** CommandId → first bound chord, including grab-mode sub-bindings. */

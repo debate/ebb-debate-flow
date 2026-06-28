@@ -10,7 +10,7 @@ describe("displayChord", () => {
     });
 
     it("prettifies modifier chords", () => {
-        expect(prettyChord("Meta+Shift+ArrowUp")).toBe("⌘⇧↑");
+        expect(prettyChord("Meta+Shift+ArrowUp")).toBe("Cmd-Shift-Up");
         expect(prettyChord("Escape")).toBe("Esc");
     });
 
@@ -27,6 +27,6 @@ describe("displayChord", () => {
         useRoundStore.setState({
             keymapOverrides: { "node.sibling": "Meta+J" },
         });
-        expect(keyHintFor("node.sibling")).toBe("⌘J");
+        expect(keyHintFor("node.sibling")).toBe("Cmd-J");
     });
 });

@@ -232,7 +232,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
             <>
                 <p>
                     Ebb is built to run from the keyboard. Keybindings use the platform modifier —{" "}
-                    <Kbd k="⌘" /> on macOS, <Kbd k="Ctrl" /> on Windows and Linux, so every shortcut
+                    <Kbd k="Cmd" /> on macOS, <Kbd k="Ctrl" /> on Windows and Linux, so every shortcut
                     adapts automatically.
                 </p>
                 <p>
