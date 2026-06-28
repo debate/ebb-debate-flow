@@ -5,9 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Tip } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Tip } from "@/components/ui/tooltip";
 import { COMMANDS, type CommandId } from "@/lib/commands/registry";
 import { FONTS, DEFAULT_FONT_ID } from "@/lib/fonts/registry";
 import { effectiveKeymap } from "@/lib/keymap/effective";

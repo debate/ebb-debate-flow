@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 
+import { Tip } from "@/components/ui/tooltip";
 import { saveRoundNow } from "@/lib/persistence/autosave";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { useSaveStatus } from "@/lib/store/useSaveStatus";
-import { Tip } from "@/components/ui/tooltip";
 
 /** Coarse "time since save" — exact enough for reassurance, never ticking seconds. */
 function relTime(savedAt: number, now: number): string {
