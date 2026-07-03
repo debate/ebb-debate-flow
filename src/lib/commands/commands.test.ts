@@ -601,6 +601,55 @@ describe("keyboard grab & move", () => {
     });
 });
 
+describe("grab-to-link", () => {
+    beforeEach(resetStore);
+
+    it("link.grab arms on the unit head even from a continuation cell", () => {
+        const sheetId = freshRound();
+        const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+        const a = useRoundStore.getState().placeBareNode({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
+        // Continuation B under A at row 1.
+        useRoundStore.getState().spawnSibling();
+        useRoundStore.getState().commitPendingSpawn("b");
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 1 });
+
+        executeCommand("link.grab");
+        expect(useRoundStore.getState().linkSource).toBe(a);
+    });
+
+    it("link.commit on a valid target links, exits mode, and follows the unit", () => {
+        const sheetId = freshRound();
+        const sp = useRoundStore.getState().round!.format.speeches;
+        const p = useRoundStore.getState().placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
+        const h = useRoundStore.getState().placeBareNode({ sheetId, speechId: sp[1].id, row: 5 });
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp[1].id, row: 5 });
+        executeCommand("link.grab");
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
+
+        executeCommand("link.commit");
+        expect(useRoundStore.getState().linkSource).toBeNull();
+        const hn = useRoundStore.getState().round!.nodes.find((n) => n.id === h)!;
+        expect(hn.parentId).toBe(p);
+        expect(useRoundStore.getState().selection?.row).toBe(hn.row);
+    });
+
+    it("link.commit on an invalid target stays in link mode", () => {
+        const sheetId = freshRound();
+        const sp = useRoundStore.getState().round!.format.speeches;
+        useRoundStore.getState().placeBareNode({ sheetId, speechId: sp[1].id, row: 5 });
+        const x = useRoundStore.getState().placeBareNode({ sheetId, speechId: sp[1].id, row: 8 });
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp[1].id, row: 5 });
+        executeCommand("link.grab");
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp[1].id, row: 8 });
+
+        executeCommand("link.commit");
+        expect(useRoundStore.getState().linkSource).not.toBeNull();
+        // Same-column target: nothing linked.
+        expect(useRoundStore.getState().round!.nodes.find((n) => n.id === x)!.parentId).toBeNull();
+    });
+});
+
 describe("jump navigation (Excel data-edge)", () => {
     beforeEach(resetStore);
 

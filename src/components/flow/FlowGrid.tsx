@@ -15,6 +15,7 @@ import { columnsForSheet } from "@/lib/grid/columns";
 import { occupantAt, maxRow, subtreeMaxRow, descendantIds } from "@/lib/grid/coords";
 import { detectDrops } from "@/lib/model/drops";
 import type { Sheet } from "@/lib/model/types";
+import { unitSubtreeIds } from "@/lib/model/units";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import EmptyCellEditor from "./EmptyCellEditor";
@@ -48,6 +49,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
     const selection = useRoundStore((s) => s.selection);
     const setSelection = useRoundStore((s) => s.setSelection);
     const moveSource = useRoundStore((s) => s.moveSource);
+    const linkSource = useRoundStore((s) => s.linkSource);
     const pendingSpawn = useRoundStore((s) => s.pendingSpawn);
     const flashNodeId = useRoundStore((s) => s.flashNodeId);
     const setFlashNode = useRoundStore((s) => s.setFlashNode);
@@ -185,9 +187,16 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
         }
     }
 
-    // All nodes (root + descendants) that will move together in move mode
+    // Any grab (move or link) puts the grid in a target-cursor mode.
+    const grabActive = moveSource !== null || linkSource !== null;
+
+    // All cells that travel with the current grab (move: subtree; link: unit band)
     const movingSubtree =
-        moveSource !== null ? descendantIds(sheetNodes, moveSource) : new Set<string>();
+        moveSource !== null
+            ? descendantIds(sheetNodes, moveSource)
+            : linkSource !== null
+              ? unitSubtreeIds(sheetNodes, linkSource)
+              : new Set<string>();
 
     return (
         <>
@@ -197,6 +206,15 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                     <span>
                         Arrows to choose a target, <kbd>Enter</kbd> to drop, <kbd>Esc</kbd> to
                         cancel
+                    </span>
+                </div>
+            )}
+            {linkSource !== null && (
+                <div className="move-banner" role="status" aria-live="polite">
+                    <span className="move-banner-tag">Link</span>
+                    <span>
+                        Arrows to choose the argument this answers, <kbd>Enter</kbd> to link,{" "}
+                        <kbd>Esc</kbd> to cancel
                     </span>
                 </div>
             )}
@@ -265,9 +283,10 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                 if (node) {
                                     const isDropped = droppedIds.has(node.id);
                                     const isFlash = flashNodeId === node.id;
-                                    const isSource = moveSource === node.id;
+                                    const isSource =
+                                        moveSource === node.id || linkSource === node.id;
                                     const isMoving = movingSubtree.has(node.id);
-                                    const isMoveCursor = moveSource !== null && isSel && !isSource;
+                                    const isMoveCursor = grabActive && isSel && !isSource;
                                     const relClass = isPendingParent
                                         ? "cell-rel-parent"
                                         : selNode
@@ -294,7 +313,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                         bandClass,
                                         isDropped ? "cell-drop" : "",
                                         isMoving ? "cell-moving" : "",
-                                        isSel && moveSource === null ? "cell-sel" : "",
+                                        isSel && !grabActive ? "cell-sel" : "",
                                         isMoveCursor ? "drag-over" : "",
                                         isFlash
                                             ? `cell-flash${colIdx > 0 && colIdx <= 3 ? ` col-stagger-${colIdx}` : ""}`
@@ -345,13 +364,13 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                     pendingSpawn.row === row;
                                 const showHint =
                                     sheetIsEmpty && row === 0 && speech.id === speeches[0].id;
-                                const isMoveCursor = moveSource !== null && isSelected;
+                                const isMoveCursor = grabActive && isSelected;
                                 const isDragOver = dragOverKey === cellKey;
                                 const classes = [
                                     sideClass,
                                     bandClass,
                                     reserved ? "cell-reserved" : "cell-open",
-                                    isSelected && moveSource === null ? "cell-sel" : "",
+                                    isSelected && !grabActive ? "cell-sel" : "",
                                     isMoveCursor || isDragOver ? "drag-over" : "",
                                 ]
                                     .filter(Boolean)
@@ -418,7 +437,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                                   }
                                         }
                                     >
-                                        {(isSelected || isPendingHere) && moveSource === null ? (
+                                        {(isSelected || isPendingHere) && !grabActive ? (
                                             <EmptyCellEditor
                                                 sheetId={sheetId}
                                                 speechId={speech.id}

@@ -52,11 +52,12 @@ function columnStep(
         selection: { sheetId: string; speechId: string; row: number } | null;
         round: Round | null;
         moveSource: string | null;
+        linkSource: string | null;
         setSelection: (s: { sheetId: string; speechId: string; row: number } | null) => void;
     },
     dir: "up" | "down" | "left" | "right",
 ): void {
-    const { round, selection, moveSource } = state;
+    const { round, selection, moveSource, linkSource } = state;
     if (!round || !selection) return;
     const sheet = round.sheets.find((s) => s.id === selection.sheetId);
     if (!sheet) return;
@@ -64,9 +65,9 @@ function columnStep(
     const colIdx = speeches.findIndex((s) => s.id === selection.speechId);
     if (colIdx === -1) return;
 
-    // In grab-move, the selection is a drop target — empty cells are legal,
-    // so we step one cell at a time with edge clamping.
-    if (moveSource !== null) {
+    // In grab-move or grab-to-link, the selection is a free target cursor —
+    // empty cells are legal, so step one cell at a time with edge clamping.
+    if (moveSource !== null || linkSource !== null) {
         let nCol = colIdx;
         let nRow = selection.row;
         if (dir === "up") nRow = Math.max(0, selection.row - 1);
@@ -106,18 +107,19 @@ function columnStep(
     }
 }
 
-/** Excel data-edge jump (Ctrl/Cmd+Arrow). No-op during grab-move. */
+/** Excel data-edge jump (Ctrl/Cmd+Arrow). No-op during grab-move / link. */
 function jumpStep(
     state: {
         selection: { sheetId: string; speechId: string; row: number } | null;
         round: Round | null;
         moveSource: string | null;
+        linkSource: string | null;
         setSelection: (s: { sheetId: string; speechId: string; row: number } | null) => void;
     },
     dir: JumpDir,
 ): void {
-    const { round, selection, moveSource } = state;
-    if (!round || !selection || moveSource !== null) return;
+    const { round, selection, moveSource, linkSource } = state;
+    if (!round || !selection || moveSource !== null || linkSource !== null) return;
     const sheet = round.sheets.find((s) => s.id === selection.sheetId);
     if (!sheet) return;
     const speeches = columnsForSheet(round.format, sheet);
@@ -132,18 +134,19 @@ function jumpStep(
     state.setSelection({ sheetId: selection.sheetId, ...target });
 }
 
-/** Corner jump (Ctrl+Home / Ctrl+End). No-op during grab-move. */
+/** Corner jump (Ctrl+Home / Ctrl+End). No-op during grab-move / link. */
 function cornerJump(
     state: {
         selection: { sheetId: string; speechId: string; row: number } | null;
         round: Round | null;
         moveSource: string | null;
+        linkSource: string | null;
         setSelection: (s: { sheetId: string; speechId: string; row: number } | null) => void;
     },
     which: "home" | "end",
 ): void {
-    const { round, selection, moveSource } = state;
-    if (!round || !selection || moveSource !== null) return;
+    const { round, selection, moveSource, linkSource } = state;
+    if (!round || !selection || moveSource !== null || linkSource !== null) return;
     const sheet = round.sheets.find((s) => s.id === selection.sheetId);
     if (!sheet) return;
     const speeches = columnsForSheet(round.format, sheet);
@@ -363,7 +366,7 @@ export function executeCommand(id: CommandId): void {
 
         // ── Keyboard grab & move ──────────────────────────────────────────────
         case "move.grab": {
-            if (!round) return;
+            if (!round || state.linkSource !== null) return;
             const sel = state.selection;
             if (!sel) return;
             const node = round.nodes.find(
@@ -414,6 +417,66 @@ export function executeCommand(id: CommandId): void {
             state.commitSubtreeMove(dCol, dRow);
             state.setMoveSource(null);
             // Re-read after commit
+            const moved = useRoundStore.getState().round?.nodes.find((n) => n.id === src);
+            if (moved) {
+                state.setSelection({
+                    sheetId: moved.sheetId,
+                    speechId: moved.speechId,
+                    row: moved.row,
+                });
+            }
+            state.setFlashNode(src);
+            return;
+        }
+
+        // ── Keyboard grab & link ──────────────────────────────────────────────
+        case "link.grab": {
+            if (!round || state.moveSource !== null || state.linkSource !== null) return;
+            const sel = state.selection;
+            if (!sel) return;
+            const node = round.nodes.find(
+                (n) =>
+                    n.sheetId === sel.sheetId && n.speechId === sel.speechId && n.row === sel.row,
+            );
+            if (!node) return;
+            state.setLinkSource(unitHeadOf(round.nodes, node).id);
+            return;
+        }
+        case "link.cancel": {
+            const src = state.linkSource;
+            state.setLinkSource(null);
+            if (src && round) {
+                const node = round.nodes.find((n) => n.id === src);
+                if (node) {
+                    state.setSelection({
+                        sheetId: node.sheetId,
+                        speechId: node.speechId,
+                        row: node.row,
+                    });
+                }
+            }
+            return;
+        }
+        case "link.commit": {
+            const src = state.linkSource;
+            if (!src) return;
+            const ok = state.commitLink();
+            if (!ok) {
+                // Invalid target: flash the cell under the cursor, stay in link mode.
+                const sel = state.selection;
+                const occ =
+                    sel && round
+                        ? round.nodes.find(
+                              (n) =>
+                                  n.sheetId === sel.sheetId &&
+                                  n.speechId === sel.speechId &&
+                                  n.row === sel.row,
+                          )
+                        : null;
+                if (occ) state.setFlashNode(occ.id);
+                return;
+            }
+            state.setLinkSource(null);
             const moved = useRoundStore.getState().round?.nodes.find((n) => n.id === src);
             if (moved) {
                 state.setSelection({

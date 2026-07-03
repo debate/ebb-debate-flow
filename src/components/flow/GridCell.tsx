@@ -39,7 +39,7 @@ export default function GridCell({
     const updateNodeText = useRoundStore((s) => s.updateNodeText);
     const autoNumber = useRoundStore((s) => s.autoNumber);
     const labelDrops = useRoundStore((s) => s.labelDrops);
-    const moveActive = useRoundStore((s) => s.moveSource !== null);
+    const moveActive = useRoundStore((s) => s.moveSource !== null || s.linkSource !== null);
 
     const [localText, setLocalText] = useState(node.text);
 

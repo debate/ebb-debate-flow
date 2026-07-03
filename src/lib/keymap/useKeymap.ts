@@ -7,7 +7,7 @@ import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import { effectiveKeymap as computeEffectiveKeymap } from "./effective";
 import { shouldIntercept, isTextEntryFocus, isNativeEditingChord } from "./intercept";
-import { GRAB_BINDINGS } from "./presets";
+import { GRAB_BINDINGS, LINK_BINDINGS } from "./presets";
 import { resolveCommand, eventToChord } from "./resolve";
 
 /** Returns the keymap currently in effect: flat preset merged with user overrides. */
@@ -38,12 +38,14 @@ export function useKeymap(): void {
         }
 
         function onKeyDown(e: KeyboardEvent) {
-            const { moveSource } = useRoundStore.getState();
+            const { moveSource, linkSource } = useRoundStore.getState();
             const moveActive = moveSource !== null;
+            const linkActive = linkSource !== null;
+            const overrideActive = moveActive || linkActive;
 
             // In a text-entry field, only intercept navigation keys and
             // modifier chords; everything else is regular typing.
-            const inTextField = !moveActive && isTextEntryFocus(e.target);
+            const inTextField = !overrideActive && isTextEntryFocus(e.target);
             if (inTextField) {
                 pendingPrefix = null;
                 // Native editing chords (Cmd+A/C/V/X/Z, copy, paste, undo, etc.)
@@ -77,6 +79,8 @@ export function useKeymap(): void {
             let commandId: string | null = null;
             if (moveActive && chord in GRAB_BINDINGS) {
                 commandId = GRAB_BINDINGS[chord]!;
+            } else if (linkActive && chord in LINK_BINDINGS) {
+                commandId = LINK_BINDINGS[chord]!;
             }
 
             // ── Two-key chord resolution ──────────────────────────────────────

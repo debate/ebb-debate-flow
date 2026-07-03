@@ -33,6 +33,7 @@ const LETTER_BINDINGS: Record<Chord, CommandId> = (() => {
     const mod = isMacPlatform() ? "Meta" : "Ctrl";
     return {
         [`${mod}+m`]: "move.grab",
+        [`${mod}+g`]: "link.grab",
         [`${mod}+z`]: "edit.undo",
         [`${mod}+Z`]: "edit.redo",
         [`${mod}+b`]: "format.toggleBold",
@@ -112,6 +113,15 @@ export const FLAT_KEYMAP: Keymap = {
 export const GRAB_BINDINGS: Record<Chord, CommandId> = {
     Enter: "move.commit",
     Escape: "move.cancel",
+};
+
+/**
+ * Grab-to-link override bindings. When linkSource is active, these chords
+ * take priority over the flat keymap for the duration of the grab.
+ */
+export const LINK_BINDINGS: Record<Chord, CommandId> = {
+    Enter: "link.commit",
+    Escape: "link.cancel",
 };
 
 // ─── Registry ─────────────────────────────────────────────────────────────────

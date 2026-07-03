@@ -35,6 +35,7 @@ const RESERVED_KEYS = [
     // uppercase "X" chord. The bare "x" is intentionally NOT reserved so Cmd+X
     // stays a native cut inside the cell editor.
     "e", // toggle extended
+    "g", // grab to link
     // ── UI ─────────────────────────────────────────────────────────────────
     "\\", // sidebar toggle
     ",", // settings

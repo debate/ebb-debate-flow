@@ -22,6 +22,9 @@ export type CommandId =
     | "move.grab"
     | "move.commit"
     | "move.cancel"
+    | "link.grab"
+    | "link.commit"
+    | "link.cancel"
     | "nav.jumpUp"
     | "nav.jumpDown"
     | "nav.jumpLeft"
@@ -80,6 +83,9 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "move.grab": { id: "move.grab", label: "Grab to move" },
     "move.commit": { id: "move.commit", label: "Drop here" },
     "move.cancel": { id: "move.cancel", label: "Cancel move" },
+    "link.grab": { id: "link.grab", label: "Grab to link (answers...)" },
+    "link.commit": { id: "link.commit", label: "Link here" },
+    "link.cancel": { id: "link.cancel", label: "Cancel link" },
     "nav.jumpUp": { id: "nav.jumpUp", label: "Jump up to edge" },
     "nav.jumpDown": { id: "nav.jumpDown", label: "Jump down to edge" },
     "nav.jumpLeft": { id: "nav.jumpLeft", label: "Jump left to edge" },

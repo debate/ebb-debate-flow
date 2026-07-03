@@ -511,3 +511,21 @@ describe("FlowGrid — reserved cells beside a response band", () => {
         expect(r1c0.querySelector("textarea")).toBeNull();
     });
 });
+
+describe("FlowGrid — link mode banner", () => {
+    beforeEach(resetStore);
+
+    it("renders the Link banner when linkSource is set", () => {
+        const fmt = makeFormatByKey("policy");
+        useRoundStore.getState().createRound({ role: "aff", format: fmt });
+        const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
+        useRoundStore.getState().setActiveSheet(sheetId);
+        const h = useRoundStore
+            .getState()
+            .placeBareNode({ sheetId, speechId: fmt.speeches[0].id, row: 0 });
+        useRoundStore.setState({ linkSource: h });
+
+        render(<FlowGrid sheetId={sheetId} />);
+        expect(screen.getByText("Link")).toBeTruthy();
+    });
+});
