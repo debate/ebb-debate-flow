@@ -88,25 +88,8 @@ export default function SpikeGrid({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    useEffect(() => {
-        const hot = hotRef.current?.hotInstance;
-        if (!hot) return;
-        const editorCtx = hot.getShortcutManager().getContext("editor");
-        if (!editorCtx) return;
-        // Plain Enter falls through to the textarea, which inserts a newline.
-        editorCtx.removeShortcutsByKeys(["enter"]);
-        // Alt+Enter commits and lands the selection one row down.
-        editorCtx.addShortcut({
-            keys: [["alt", "enter"]],
-            group: "spike-keys",
-            callback: () => {
-                hot.getActiveEditor()?.finishEditing(false);
-                const sel = hot.getSelectedLast();
-                if (sel) hot.selectCell(Math.min(sel[0] + 1, hot.countRows() - 1), sel[1]);
-            },
-        });
-    }, []);
-
+    // Enter commits and moves down, Alt+Enter inserts a newline: both are
+    // Handsontable defaults, so no shortcut overrides are needed.
     return (
         <div className="ht-theme-main" style={{ height: "80vh", overflow: "hidden" }}>
             <HotTable
