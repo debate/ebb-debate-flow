@@ -1,15 +1,24 @@
+# Core build/runtime artifacts
 node_modules/
 .next/
 out/
 dist/
 build/
 .superpowers/
+coverage/
 *.log
 .DS_Store
 .env*.local
-coverage/
 tsconfig.tsbuildinfo
 
-# Tauri
+# Tauri desktop builds
 src-tauri/target/
 src-tauri/gen/schemas/
+
+# Design scratch and planning artifacts — kept locally, not committed
+# (except the design system and product briefs, which are tracked)
+design/
+docs/
+.impeccable/
+!docs/DESIGN.md
+!docs/PRODUCT.md
