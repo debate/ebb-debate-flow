@@ -103,7 +103,7 @@ edge case; otherwise leave the code bare.
 - **No mirror comments** that restate the adjacent line ("// clear on
   unmount" on a cleanup assignment), and no hedges that misstate behavior
   ("assumes the group exists" on code that safely no-ops).
-- **Section banners are a deliberate convention** (`// ─── Actions ───...`);
+- **Section banners are a deliberate convention** (`// --- Actions ---...`);
   keep them, and keep directive comments (`eslint-disable`,
   `@ts-expect-error`) intact.
 - **Use the model's vocabulary** (`src/lib/model/types.ts` is the source of
@@ -113,6 +113,10 @@ edge case; otherwise leave the code bare.
   is fine for the visual dimension); **side** is aff/neg while **role** also
   includes judge. In export code, disambiguate the app's `Sheet` from Excel
   worksheets explicitly.
+- **Use plain text**. Never add symbols, glyphs, or other unicode characters.
+  Only use standard ASCII characters, unless absolutely necessary. When
+  representing keyboard modifiers, use standard terms Meta, Alt, Ctrl, Shift
+  instead of glyphs.
 
 ## Notes for agents
 
