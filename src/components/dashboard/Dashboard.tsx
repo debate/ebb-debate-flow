@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Logo } from "@/components/brand/Logo";
+import KeybindingsCheatsheet from "@/components/palette/KeybindingsCheatsheet";
 import SettingsPanel from "@/components/settings/SettingsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -114,8 +115,7 @@ export default function Dashboard() {
                     size="sm"
                     aria-label="Guide"
                     data-testid="dashboard-guide"
-                    disabled
-                    title="Guide is coming back soon"
+                    onClick={() => useFlowStore.getState().setCheatsheetOpen(true)}
                 >
                     Guide
                 </Button>
@@ -247,6 +247,7 @@ export default function Dashboard() {
             </div>
 
             <SettingsPanel />
+            <KeybindingsCheatsheet />
             <FlowDetailDrawer id={detailId} onClose={() => setDetailId(null)} onChanged={refresh} />
         </div>
     );

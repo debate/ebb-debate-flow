@@ -79,7 +79,7 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "sheet.jump9": { id: "sheet.jump9", label: "Jump to sheet 9" },
     "settings.open": { id: "settings.open", label: "Open settings" },
     "info.open": { id: "info.open", label: "Open round info" },
-    "help.open": { id: "help.open", label: "Show keybindings" },
+    "help.open": { id: "help.open", label: "Open guide" },
     "sidebar.toggle": { id: "sidebar.toggle", label: "Toggle sidebar" },
     "palette.open": { id: "palette.open", label: "Command palette" },
     "theme.light": { id: "theme.light", label: "Theme: Light" },

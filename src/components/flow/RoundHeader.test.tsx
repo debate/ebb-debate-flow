@@ -120,10 +120,11 @@ describe("RoundHeader", () => {
         expect(screen.getByTestId("round-header").textContent).toContain("Westwood JS");
     });
 
-    it("keeps the Guide button disabled while the guide is away", () => {
+    it("opens the guide when the Guide button is clicked", () => {
         setupRound("aff");
         renderRoundHeader();
-        expect(screen.getByTestId("guide-btn")).toBeDisabled();
+        fireEvent.click(screen.getByTestId("guide-btn"));
+        expect(useFlowStore.getState().cheatsheetOpen).toBe(true);
     });
 
     it("replaces the store round when a valid file is imported", async () => {

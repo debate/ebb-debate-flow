@@ -74,11 +74,11 @@ export default function RoundHeader() {
                     onChange={handleImportChange}
                     data-testid="import-file-input"
                 />
-                <Tip label="Guide is coming back soon">
+                <Tip label="Guide" command="help.open">
                     <Button
                         variant="ghost"
                         size="sm"
-                        disabled
+                        onClick={() => useFlowStore.getState().setCheatsheetOpen(true)}
                         aria-label="Guide"
                         data-testid="guide-btn"
                     >

@@ -1,5 +1,5 @@
 import "fake-indexeddb/auto";
-import { render, screen, waitFor, cleanup } from "@testing-library/react";
+import { render, screen, waitFor, cleanup, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
@@ -127,16 +127,11 @@ describe("Dashboard first-run", () => {
         expect(rounds[0].role).toBe("neg");
     });
 
-    it("shows the guide-coming-back note instead of a guide dialog", async () => {
-        renderDashboard();
-        await waitFor(() => expect(screen.getByTestId("dashboard-empty")).toBeInTheDocument());
-        expect(screen.getByTestId("empty-guide-note")).toBeInTheDocument();
-    });
-
-    it("keeps the header Guide button disabled", async () => {
+    it("opens the guide when the header Guide button is clicked", async () => {
         await persistFlow(mk("a"));
         renderDashboard();
         await waitFor(() => screen.getByTestId("flow-card-a"));
-        expect(screen.getByTestId("dashboard-guide")).toBeDisabled();
+        fireEvent.click(screen.getByTestId("dashboard-guide"));
+        expect(await screen.findByTestId("cheatsheet-panel")).toBeInTheDocument();
     });
 });
