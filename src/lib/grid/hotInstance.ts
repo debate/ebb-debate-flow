@@ -23,3 +23,16 @@ export function getActiveHot(): Handsontable | null {
 export function notifyGridMutated(): void {
     onMutated?.();
 }
+
+/**
+ * Return keyboard focus to the grid so typing edits the flow and arrows move
+ * cells. Overlays call this on close; re-selecting the last cell makes the grid
+ * listen again after a Radix dialog stole focus. Returns false when no grid is
+ * mounted (e.g. the dashboard) so callers can fall back to default focus.
+ */
+export function focusActiveHot(): boolean {
+    if (!active) return false;
+    const sel = active.getSelectedLast();
+    active.selectCell(sel?.[0] ?? 0, sel?.[1] ?? 0);
+    return true;
+}
