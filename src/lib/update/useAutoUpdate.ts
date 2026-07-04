@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import {
     downloadAndInstall,
@@ -54,7 +54,7 @@ export function useAutoUpdate(): AutoUpdate {
     const [state, setState] = useState<UpdateUiState>({ status: "idle" });
     // Guards against overlapping checks (interval firing during a download, etc.).
     const running = useRef(false);
-    const autoCheckEnabled = useRoundStore((s) => s.updateConfig.autoCheckEnabled);
+    const autoCheckEnabled = useFlowStore((s) => s.updateConfig.autoCheckEnabled);
 
     const run = useCallback(async (manual: boolean) => {
         if (!isDesktop() || running.current) return;
@@ -68,7 +68,7 @@ export function useAutoUpdate(): AutoUpdate {
             }
             const version = await getCurrentVersion();
             // Read the freshest config so a just-flipped toggle is respected.
-            const config = useRoundStore.getState().updateConfig;
+            const config = useFlowStore.getState().updateConfig;
             const action = decideUpdateAction(manifest, version, config);
 
             switch (action.kind) {

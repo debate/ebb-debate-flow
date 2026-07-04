@@ -6,17 +6,13 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { executeCommand } from "@/lib/commands/commands";
 import { COMMANDS, type CommandId } from "@/lib/commands/registry";
 import { keyHintFor } from "@/lib/keymap/displayChord";
-import { fuzzySearch } from "@/lib/search/fuzzy";
 import { useFlowStore } from "@/lib/store/useFlowStore";
-
-import { Highlighted } from "./Highlighted";
 
 /** A flat, keyboard-navigable command row. */
 interface Row {
     id: CommandId;
     label: string;
     hint: string | null;
-    ranges: number[];
 }
 
 /** Registry commands in declaration order, with resolved key hints. */
@@ -44,30 +40,14 @@ function CommandPaletteInner() {
         inputRef.current?.focus();
     }, []);
 
-    // Stable label haystack for fuzzy search; commands are fixed at module load.
-    const labelHaystack = useMemo(() => ALL_COMMANDS.map((c) => c.label), []);
-
     const rows = useMemo<Row[]>(() => {
-        const q = query.trim();
-        if (!q) {
-            return ALL_COMMANDS.map((c) => ({
-                id: c.id,
-                label: c.label,
-                hint: keyHintFor(c.id),
-                ranges: [],
-            }));
-        }
-        const res = fuzzySearch(labelHaystack, q);
-        return res.order.map((idx, i) => {
-            const c = ALL_COMMANDS[idx];
-            return {
-                id: c.id,
-                label: c.label,
-                hint: keyHintFor(c.id),
-                ranges: res.ranges[i],
-            };
-        });
-    }, [query, labelHaystack]);
+        const q = query.trim().toLowerCase();
+        return ALL_COMMANDS.filter((c) => !q || c.label.toLowerCase().includes(q)).map((c) => ({
+            id: c.id,
+            label: c.label,
+            hint: keyHintFor(c.id),
+        }));
+    }, [query]);
 
     useEffect(() => {
         setSelectedIndex(0);
@@ -176,7 +156,7 @@ function CommandPaletteInner() {
                                         }`}
                                     >
                                         <span className="truncate">
-                                            <Highlighted text={row.label} ranges={row.ranges} />
+                                            <span>{row.label}</span>
                                         </span>
                                         {row.hint && (
                                             <kbd className="text-muted-foreground shrink-0 text-[11px]">

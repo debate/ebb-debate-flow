@@ -1,26 +1,16 @@
 import { describe, it, expect } from "vitest";
 
-import { emptyScouting } from "@/lib/model/normalize";
-import type { Round } from "@/lib/model/types";
+import { emptyScouting, makeFlowRound, type FlowRound } from "@/lib/model/flow";
 
 import { buildSummary } from "./summary";
 
-function baseRound(overrides: Partial<Round> = {}): Round {
+function baseRound(overrides: Partial<FlowRound> = {}): FlowRound {
     return {
+        ...makeFlowRound("aff"),
         id: "r1",
         createdAt: 10,
         updatedAt: 20,
-        role: "aff",
-        format: {
-            id: "f",
-            name: "Policy",
-            speeches: [],
-            prepSeconds: { aff: 240, neg: 240 },
-        },
         scouting: emptyScouting(),
-        sheets: [],
-        nodes: [],
-        groups: [],
         ...overrides,
     };
 }

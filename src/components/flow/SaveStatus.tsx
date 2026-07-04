@@ -4,8 +4,8 @@ import { Warning } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 
 import { Tip } from "@/components/ui/tooltip";
-import { saveRoundNow } from "@/lib/persistence/autosave";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { saveFlowNow } from "@/lib/persistence/flowPersistence";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 import { useSaveStatus } from "@/lib/store/useSaveStatus";
 
 /** Coarse "time since save" — exact enough for reassurance, never ticking seconds. */
@@ -55,8 +55,8 @@ export default function SaveStatus() {
                     type="button"
                     data-testid="save-retry"
                     onClick={() => {
-                        const round = useRoundStore.getState().round;
-                        if (round) void saveRoundNow(round, report);
+                        const round = useFlowStore.getState().round;
+                        if (round) void saveFlowNow(round, report);
                     }}
                     className="rounded-sm underline underline-offset-2 hover:no-underline focus-visible:outline-2"
                 >

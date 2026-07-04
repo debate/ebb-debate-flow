@@ -15,18 +15,18 @@ function renderSaveStatus() {
     );
 }
 
-const saveRoundNow = vi.fn();
-vi.mock("@/lib/persistence/autosave", () => ({
-    saveRoundNow: (...args: unknown[]) => saveRoundNow(...args),
+const saveFlowNow = vi.fn();
+vi.mock("@/lib/persistence/flowPersistence", () => ({
+    saveFlowNow: (...args: unknown[]) => saveFlowNow(...args),
 }));
 
 // A round must exist for Retry to act on.
-vi.mock("@/lib/store/useRoundStore", () => ({
-    useRoundStore: { getState: () => ({ round: { id: "r1" } }) },
+vi.mock("@/lib/store/useFlowStore", () => ({
+    useFlowStore: { getState: () => ({ round: { id: "r1" } }) },
 }));
 
 beforeEach(() => {
-    saveRoundNow.mockClear();
+    saveFlowNow.mockClear();
     useSaveStatus.setState({ state: "idle", savedAt: null });
 });
 
@@ -71,7 +71,7 @@ describe("SaveStatus", () => {
         expect(status).toHaveTextContent("Not saved");
 
         await user.click(screen.getByTestId("save-retry"));
-        expect(saveRoundNow).toHaveBeenCalledTimes(1);
-        expect(saveRoundNow).toHaveBeenCalledWith({ id: "r1" }, expect.any(Function));
+        expect(saveFlowNow).toHaveBeenCalledTimes(1);
+        expect(saveFlowNow).toHaveBeenCalledWith({ id: "r1" }, expect.any(Function));
     });
 });

@@ -9,7 +9,7 @@
 
 import { create } from "zustand";
 
-import type { SaveStatus } from "@/lib/persistence/autosave";
+import type { SaveStatus } from "@/lib/persistence/flowPersistence";
 
 /** "idle" = nothing to report yet (no round loaded / left the editor). */
 export type SaveState = SaveStatus | "idle";

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import { useUpdate } from "../update/UpdateProvider";
 
@@ -30,8 +30,8 @@ function statusLine(status: string, version?: string): string | null {
  * panel gates the category on `isDesktop()`).
  */
 export default function UpdateSettings() {
-    const config = useRoundStore((s) => s.updateConfig);
-    const setUpdateConfig = useRoundStore((s) => s.setUpdateConfig);
+    const config = useFlowStore((s) => s.updateConfig);
+    const setUpdateConfig = useFlowStore((s) => s.setUpdateConfig);
     const { state, checkNow } = useUpdate();
 
     const busy = state.status === "checking" || state.status === "downloading";

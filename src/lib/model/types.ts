@@ -4,79 +4,6 @@ export type Role = "aff" | "neg" | "judge";
 /** Competitive sides (excludes judge). */
 export type Side = "aff" | "neg";
 
-/** Status a debater can assign to an opponent's argument. */
-export type NodeStatus = "conceded" | "extended";
-
-/** A single speech slot within a debate format. */
-export interface Speech {
-    id: string;
-    name: string;
-    side: Side;
-    /** Allocated speaking time in seconds. */
-    seconds: number;
-    /** Optional grouping label for consecutive speeches that share a column header. */
-    group?: string;
-}
-
-/** A debate format describing its speeches and prep time allocations. */
-export interface Format {
-    id: string;
-    name: string;
-    speeches: Speech[];
-    prepSeconds: { aff: number; neg: number };
-}
-
-/** A single argument on the flow. Position is grid-owned: (speechId, row). */
-export interface ArgumentNode {
-    id: string;
-    /** The sheet (flow page) this node belongs to. */
-    sheetId: string;
-    /** The speech column this node belongs to. */
-    speechId: string;
-    /** Parent node id, or null. Relationship metadata only — does NOT drive layout. */
-    parentId: string | null;
-    /** Global grid row within the sheet (shared across all columns). */
-    row: number;
-    text: string;
-    statuses: NodeStatus[];
-    /** Emphasis decoration (renders bold). */
-    bold: boolean;
-    /** Highlight decoration (renders a yellow background behind the text). */
-    highlight: boolean;
-    /** Override the auto-generated display number for this node. */
-    numberOverride?: number | null;
-    /**
-     * Unit membership key. A unit is a vertical run of same-column cells that
-     * together form ONE argument; the lowest-row member (the head) carries the
-     * unit's parentId, statuses, and number. Absent = the node is a unit of
-     * itself. The key is opaque - it is usually the id of the cell that
-     * started the unit, and stays valid even if that node is later deleted.
-     */
-    unitId?: string;
-}
-
-/** A labeled bracket grouping argument nodes in the same column. */
-export interface ArgGroup {
-    id: string;
-    sheetId: string;
-    label: string;
-    /** Node ids bundled together (same column). */
-    memberIds: string[];
-}
-
-/** A flow sheet (page) grouping arguments. */
-export interface Sheet {
-    id: string;
-    title: string;
-    group: "aff" | "neg";
-    /** Display order among sheets. */
-    order: number;
-    /** Sheet variety. Absent / 'flow' = the normal argument grid. 'cx' = the cross-ex sheet. */
-    kind?: "flow" | "cx";
-    /** Leftmost speech column shown (absent = derive from side). */
-    startSpeechId?: string;
-}
-
 /** One debater's name. */
 export interface Debater {
     first: string;
@@ -102,19 +29,4 @@ export interface Scouting {
     date?: string;
     judge?: string;
     decision?: Decision;
-}
-
-/** Top-level aggregate representing a complete debate round. */
-export interface Round {
-    id: string;
-    createdAt: number;
-    updatedAt: number;
-    /** ms timestamp when soft-deleted (moved to Trash); absent/null = live. */
-    deletedAt?: number | null;
-    role: Role;
-    format: Format;
-    scouting: Scouting;
-    sheets: Sheet[];
-    nodes: ArgumentNode[];
-    groups: ArgGroup[];
 }
