@@ -10,6 +10,7 @@
         "lint": "next lint",
         "format": "oxfmt .",
         "format:check": "oxfmt --check .",
+        "icons": "node scripts/generate-icons.mjs && tauri icon public/icons/icon-1024.png",
         "tauri": "tauri",
         "desktop:dev": "tauri dev",
         "desktop:build": "tauri build"

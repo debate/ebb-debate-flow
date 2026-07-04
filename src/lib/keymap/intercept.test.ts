@@ -91,7 +91,10 @@ describe("isNativeEditingChord", () => {
     });
 
     it("returns true for Cmd+Backspace / Ctrl+Backspace (delete word/line back)", () => {
-        const e = makeKeyEvent({ key: "Backspace", [mod === "Meta" ? "metaKey" : "ctrlKey"]: true });
+        const e = makeKeyEvent({
+            key: "Backspace",
+            [mod === "Meta" ? "metaKey" : "ctrlKey"]: true,
+        });
         expect(isNativeEditingChord(e)).toBe(true);
     });
 
