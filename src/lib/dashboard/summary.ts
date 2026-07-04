@@ -1,5 +1,5 @@
 import { teamCode } from "@/lib/model/teamCode";
-import type { Round, Role, Decision } from "@/lib/model/types";
+import type { Role, Decision, Scouting } from "@/lib/model/types";
 
 /** Lightweight per-flow summary for the dashboard grid (no node loading). */
 export interface RoundSummary {
@@ -18,8 +18,17 @@ export interface RoundSummary {
     decision?: Decision;
 }
 
+/** The summary only reads identity, timestamps, role, and scouting. */
+export interface SummarySource {
+    id: string;
+    createdAt: number;
+    updatedAt: number;
+    role: Role;
+    scouting: Scouting;
+}
+
 /** Derive a RoundSummary from a full round. */
-export function buildSummary(round: Round): RoundSummary {
+export function buildSummary(round: SummarySource): RoundSummary {
     const sc = round.scouting;
     return {
         id: round.id,
