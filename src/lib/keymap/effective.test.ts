@@ -38,14 +38,14 @@ describe("effectiveKeymap", () => {
 });
 
 describe("platform modifier bindings", () => {
-    it("mod+a → sheet.newAff", () => {
+    it("mod+shift+a → sheet.newAff", () => {
         const km = effectiveKeymap({});
-        expect(km.bindings[`${mod}+a`]).toBe("sheet.newAff");
+        expect(km.bindings[`${mod}+A`]).toBe("sheet.newAff");
     });
 
-    it("mod+n → sheet.newNeg", () => {
+    it("mod+shift+n → sheet.newNeg", () => {
         const km = effectiveKeymap({});
-        expect(km.bindings[`${mod}+n`]).toBe("sheet.newNeg");
+        expect(km.bindings[`${mod}+N`]).toBe("sheet.newNeg");
     });
 
     it("mod+r → sheet.rename", () => {
