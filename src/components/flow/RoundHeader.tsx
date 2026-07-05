@@ -53,7 +53,6 @@ export default function RoundHeader() {
             className="border-border bg-card flex h-12 flex-none items-center justify-between border-b px-4"
             data-testid="round-header"
         >
-
             <div className="flex items-center gap-3">
                 <Link
                     href="/"

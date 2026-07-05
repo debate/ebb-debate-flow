@@ -154,56 +154,59 @@ export default function KeybindingsCheatsheet() {
                         style={{ gridTemplateColumns: "1fr 1fr" }}
                     >
                         {FIXED_GROUPS.map((group) => (
-                        <div key={group.label} className="flex flex-col gap-1">
-                            <div className="text-muted-foreground mb-1 font-mono text-[9px] font-bold tracking-widest uppercase">
-                                {group.label}
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                                {group.rows.map((row) => (
-                                    <div key={row.label} className="flex items-center gap-2">
-                                        <kbd className="text-foreground border-border bg-muted inline-flex min-w-[26px] shrink-0 items-center justify-center rounded border border-b-2 px-1.5 py-px font-mono text-[12px] whitespace-nowrap">
-                                            {row.chord}
-                                        </kbd>
-                                        <span className="text-foreground text-[12px]">
-                                            {row.label}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                    {GROUPS.map((group) => (
-                        <div key={group.label} className="flex flex-col gap-1">
-                            <div className="text-muted-foreground mb-1 font-mono text-[9px] font-bold tracking-widest uppercase">
-                                {group.label}
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                                {group.rows.map((row) => {
-                                    const { commandId } = row;
-                                    const chord = chordFor[commandId];
-                                    const isJumpAnchor = commandId === "sheet.jump1";
-                                    if (!chord && !isJumpAnchor) return null;
-                                    const displayChord = isJumpAnchor
-                                        ? prettyChord(chord ?? "Meta+1").replace("1", "1-9")
-                                        : prettyChord(chord!);
-                                    const label = isJumpAnchor
-                                        ? "Jump to sheet 1-9"
-                                        : COMMANDS[commandId].label;
-
-                                    return (
-                                        <div key={commandId} className="flex items-center gap-2">
+                            <div key={group.label} className="flex flex-col gap-1">
+                                <div className="text-muted-foreground mb-1 font-mono text-[9px] font-bold tracking-widest uppercase">
+                                    {group.label}
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    {group.rows.map((row) => (
+                                        <div key={row.label} className="flex items-center gap-2">
                                             <kbd className="text-foreground border-border bg-muted inline-flex min-w-[26px] shrink-0 items-center justify-center rounded border border-b-2 px-1.5 py-px font-mono text-[12px] whitespace-nowrap">
-                                                {displayChord}
+                                                {row.chord}
                                             </kbd>
                                             <span className="text-foreground text-[12px]">
-                                                {label}
+                                                {row.label}
                                             </span>
                                         </div>
-                                    );
-                                })}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                        {GROUPS.map((group) => (
+                            <div key={group.label} className="flex flex-col gap-1">
+                                <div className="text-muted-foreground mb-1 font-mono text-[9px] font-bold tracking-widest uppercase">
+                                    {group.label}
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    {group.rows.map((row) => {
+                                        const { commandId } = row;
+                                        const chord = chordFor[commandId];
+                                        const isJumpAnchor = commandId === "sheet.jump1";
+                                        if (!chord && !isJumpAnchor) return null;
+                                        const displayChord = isJumpAnchor
+                                            ? prettyChord(chord ?? "Meta+1").replace("1", "1-9")
+                                            : prettyChord(chord!);
+                                        const label = isJumpAnchor
+                                            ? "Jump to sheet 1-9"
+                                            : COMMANDS[commandId].label;
+
+                                        return (
+                                            <div
+                                                key={commandId}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <kbd className="text-foreground border-border bg-muted inline-flex min-w-[26px] shrink-0 items-center justify-center rounded border border-b-2 px-1.5 py-px font-mono text-[12px] whitespace-nowrap">
+                                                    {displayChord}
+                                                </kbd>
+                                                <span className="text-foreground text-[12px]">
+                                                    {label}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
 

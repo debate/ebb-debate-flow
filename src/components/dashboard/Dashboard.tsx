@@ -133,7 +133,8 @@ export default function Dashboard() {
                                 Flow your first round
                             </h1>
                             <p className="text-muted-foreground text-[13px] leading-relaxed text-pretty">
-                                Ebb is a keyboard-first flowing app. Everything stays on this device. Pick a side to start.
+                                Ebb is a keyboard-first flowing app. Everything stays on this
+                                device. Pick a side to start.
                             </p>
                         </div>
 
@@ -167,7 +168,6 @@ export default function Dashboard() {
                                 or Judge
                             </button>
                         </div>
-
                     </div>
                 ) : (
                     <>

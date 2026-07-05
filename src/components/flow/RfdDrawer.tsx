@@ -179,9 +179,7 @@ export default function RfdDrawer() {
                 className="hover:bg-accent h-1 flex-none cursor-row-resize"
             />
             <div className="border-border flex items-center justify-between border-b px-3.5 py-2">
-                <span className="text-foreground text-[13px] font-semibold tracking-wide">
-                    RFD
-                </span>
+                <span className="text-foreground text-[13px] font-semibold tracking-wide">RFD</span>
                 <Tip label="Close">
                     <button
                         type="button"

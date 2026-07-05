@@ -8,8 +8,8 @@ import { applyFlowFont } from "@/lib/fonts/applyFlowFont";
 import { loadFlow } from "@/lib/persistence/flowPersistence";
 import { attachFlowAutosave } from "@/lib/persistence/flowPersistence";
 import { useFlowStore } from "@/lib/store/useFlowStore";
-import { applySideColors } from "@/lib/theme/applySideColors";
 import { useSaveStatus } from "@/lib/store/useSaveStatus";
+import { applySideColors } from "@/lib/theme/applySideColors";
 
 import Workspace from "./Workspace";
 
