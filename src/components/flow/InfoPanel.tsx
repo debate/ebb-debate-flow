@@ -184,21 +184,6 @@ function InfoPanelInner() {
                                 );
                             })}
                         </div>
-                        <textarea
-                            className="cell-input border-border rounded border p-2 text-[13px]"
-                            rows={3}
-                            placeholder="RFD"
-                            value={sc.decision?.rfd ?? ""}
-                            data-testid="scout-rfd"
-                            onChange={(e) =>
-                                setScouting({
-                                    decision: {
-                                        ...sc.decision,
-                                        rfd: e.target.value,
-                                    },
-                                })
-                            }
-                        />
                     </div>
                 </div>
             </DialogContent>
