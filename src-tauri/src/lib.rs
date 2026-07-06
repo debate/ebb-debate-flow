@@ -6,7 +6,7 @@
 
 mod menu;
 
-use tauri::WindowEvent;
+use tauri::{Emitter, WindowEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -29,11 +29,15 @@ pub fn run() {
             app.set_menu(app_menu)?;
             Ok(())
         })
-        // Quit is the single deliberate exit. The custom menu item routes here
-        // and exits directly, bypassing the close guard below.
+        // Quit is the single deliberate exit; it routes here and exits directly,
+        // bypassing the close guard below. Every other menu item carries a JS
+        // CommandId, which we hand to the frontend to run (see useDesktopMenu).
         .on_menu_event(|app, event| {
-            if event.id().0.as_str() == menu::QUIT_ID {
+            let id = event.id().0.as_str();
+            if id == menu::QUIT_ID {
                 app.exit(0);
+            } else {
+                let _ = app.emit("menu:command", id.to_string());
             }
         })
         // Window lifecycle guard: neutralize destructive closes of the primary

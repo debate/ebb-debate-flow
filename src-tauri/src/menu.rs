@@ -1,25 +1,29 @@
-//! Ebb's native menu (v1).
+//! Ebb's native menu.
 //!
 //! ## Menu design
 //!
 //! Ebb is keyboard-first and the JS keymap in `src/lib/keymap` is the single
-//! source of truth for every app binding. Several app chords are focus-dependent:
-//! Meta+A means "new aff" in grid navigation focus but native select-all while
-//! typing in a text box (see `intercept.ts`).
+//! source of truth for every app binding. The menu mirrors those commands so
+//! they are also reachable by mouse.
 //!
-//! macOS WKWebView routes an editing shortcut into the focused text field only
-//! when a menu item carries that accelerator; without one, the chord never
-//! reaches the field (Meta+C copies nothing, etc.). So Cut/Copy/Paste are real
-//! `PredefinedMenuItem`s: their chords (Meta+X / Meta+C / Meta+V) are not app
-//! bindings, so installing the accelerators costs nothing and fixes native
-//! clipboard editing.
+//! Every app command item carries its JS `CommandId` as the menu id. Clicking
+//! emits a `menu:command` event that the frontend runs via `executeCommand`
+//! (see `useDesktopMenu`). The chord printed in each label is display-only
+//! text, never a real accelerator: a menu accelerator is consumed by the OS
+//! *before* the webview's keydown fires, which would silently break the JS
+//! keymap's focus logic (several chords are focus-dependent - Meta+A means
+//! "new aff" in grid focus but native select-all while typing).
 //!
-//! The remaining editing chords collide with app bindings and therefore stay
-//! display-only (a menu accelerator is consumed by the OS *before* the webview's
-//! keydown fires, which would silently break the JS keymap's focus logic):
-//! Meta+A is `sheet.newAff`, Meta+Z is `edit.undo`, Shift+Meta+Z is `edit.redo`.
-//! Meta+A's text-field behavior (select-all) is instead restored in JS - see
-//! `selectAllInElement` / `useDesktopSelectAll` in `src/lib/keymap`.
+//! Cut/Copy/Paste are the exception: they are real `PredefinedMenuItem`s with
+//! accelerators. macOS WKWebView routes an editing shortcut into the focused
+//! text field only when a menu item carries that accelerator; without one the
+//! chord never reaches the field (Meta+C copies nothing, etc.). Their chords
+//! (Meta+X / Meta+C / Meta+V) are not app bindings, so installing the
+//! accelerators costs nothing and fixes native clipboard editing.
+//!
+//! Select All stays a display-only hint: Meta+A is the app's `sheet.newAff`
+//! binding, so its text-field select-all behavior is restored in JS instead -
+//! see `selectAllInElement` / `useDesktopSelectAll` in `src/lib/keymap`.
 
 use tauri::menu::{AboutMetadata, Menu, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
 use tauri::{AppHandle, Runtime};
@@ -29,6 +33,15 @@ pub const QUIT_ID: &str = "quit";
 
 /// Builds the application menu.
 pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
+    // Pads a label so its display-only chord hint sits in a rough right column.
+    let pad = |label: &str, chord: &str| format!("{label:<26}{chord}");
+
+    // A clickable command item: its id is a JS CommandId, emitted on click.
+    // The chord is label text only, never a real accelerator (see module docs).
+    let cmd = |id: &str, label: &str, chord: &str| -> tauri::Result<_> {
+        MenuItemBuilder::new(pad(label, chord)).id(id).build(app)
+    };
+
     // A greyed reference row: shows the binding, does nothing when clicked.
     let hint = |label: &str| -> tauri::Result<_> {
         MenuItemBuilder::new(label).enabled(false).build(app)
@@ -50,6 +63,8 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
             Some(AboutMetadata::default()),
         )?)
         .separator()
+        .item(&cmd("settings.open", "Settings", "\u{2318},")?)
+        .separator()
         .item(&PredefinedMenuItem::hide(app, None)?)
         .item(&PredefinedMenuItem::hide_others(app, None)?)
         .item(&PredefinedMenuItem::show_all(app, None)?)
@@ -57,38 +72,52 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .item(&quit)
         .build()?;
 
-    // File: app creation / structure commands (display-only).
+    // File: sheet creation / structure commands.
     let file_menu = SubmenuBuilder::new(app, "File")
-        .item(&hint("New Aff Sheet            ⌘A")?)
-        .item(&hint("New Neg Sheet            ⌘N")?)
-        .item(&hint("Rename Sheet             ⌘R")?)
+        .item(&cmd("sheet.newAff", "New Aff Sheet", "\u{21e7}\u{2318}A")?)
+        .item(&cmd("sheet.newNeg", "New Neg Sheet", "\u{21e7}\u{2318}N")?)
+        .item(&cmd("sheet.rename", "Rename Sheet", "\u{2318}R")?)
         .separator()
-        .item(&hint("Settings                 ⌘,")?)
+        .item(&cmd("info.open", "Round Info", "")?)
+        .item(&cmd("settings.open", "Settings", "\u{2318},")?)
         .build()?;
 
-    // Edit: Cut/Copy/Paste carry real accelerators so WKWebView routes them to
-    // the focused text field. Undo/Redo/Select All are display-only because
-    // their chords are app bindings the JS keymap owns (see module docs).
+    // Edit: Undo/Redo and the format/row commands are clickable (they emit
+    // their CommandId). Cut/Copy/Paste carry real accelerators so WKWebView
+    // routes them to the focused text field; Select All is display-only.
     let edit_menu = SubmenuBuilder::new(app, "Edit")
-        .item(&hint("Undo                     ⌘Z")?)
-        .item(&hint("Redo                   ⇧⌘Z")?)
+        .item(&cmd("edit.undo", "Undo", "\u{2318}Z")?)
+        .item(&cmd("edit.redo", "Redo", "\u{21e7}\u{2318}Z")?)
         .separator()
         .item(&PredefinedMenuItem::cut(app, None)?)
         .item(&PredefinedMenuItem::copy(app, None)?)
         .item(&PredefinedMenuItem::paste(app, None)?)
-        .item(&hint("Select All               ⌘A")?)
+        .item(&hint("Select All               \u{2318}A")?)
+        .separator()
+        .item(&cmd("format.toggleBold", "Bold", "\u{2318}B")?)
+        .item(&cmd("format.toggleHighlight", "Highlight", "\u{21e7}\u{2318}H")?)
+        .item(&cmd("format.toggleCard", "Card", "\u{2318}T")?)
+        .separator()
+        .item(&cmd("row.insertAbove", "Insert Row", "\u{21e7}\u{2318}O")?)
+        .item(&cmd("cell.insert", "Insert Cell", "\u{2318}O")?)
+        .item(&cmd("row.delete", "Delete Row", "\u{2318}\u{232b}")?)
         .build()?;
 
-    // View: structural toggles (display-only).
+    // View: navigation and panel toggles.
     let view_menu = SubmenuBuilder::new(app, "View")
-        .item(&hint("Toggle Sidebar           ⌘\\")?)
-        .item(&hint("Quick Switch Sheet       ⌘K")?)
-        .item(&hint("Command Palette          ⌘P")?)
+        .item(&cmd("sheet.next", "Next Sheet", "]")?)
+        .item(&cmd("sheet.prev", "Previous Sheet", "[")?)
+        .separator()
+        .item(&cmd("sheet.quickSwitch", "Search Cells", "\u{2318}P")?)
+        .item(&cmd("palette.open", "Command Palette", "\u{21e7}\u{2318}P")?)
+        .separator()
+        .item(&cmd("sidebar.toggle", "Toggle Sidebar", "\u{2318}\\")?)
+        .item(&cmd("rfd.toggle", "Toggle RFD", "\u{2318}J")?)
         .build()?;
 
-    // Help: pointers; the keymap itself remains discoverable in-app.
+    // Help: opens the in-app keybindings guide.
     let help_menu = SubmenuBuilder::new(app, "Help")
-        .item(&hint("Keyboard shortcuts live in Settings")?)
+        .item(&cmd("help.open", "Keyboard Shortcuts", "?")?)
         .build()?;
 
     let mut builder = tauri::menu::MenuBuilder::new(app);
