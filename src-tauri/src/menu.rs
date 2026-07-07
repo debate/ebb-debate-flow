@@ -31,10 +31,41 @@ use tauri::{AppHandle, Runtime};
 /// Menu item id for the single deliberate-exit path.
 pub const QUIT_ID: &str = "quit";
 
+/// Left edge of the display-only chord column, in 1/1000 em. Past the widest
+/// chord-bearing label so every chord starts at the same x across all menus.
+const CHORD_COLUMN: u32 = 9000;
+
+/// Rough advance width of a menu-font glyph in 1/1000 em. macOS draws menus in
+/// a proportional font, so padding by character count (all labels to N chars)
+/// leaves the chords ragged; padding by estimated width lines them up instead.
+/// ponytail: approximate table, off by up to a space width (~1px). True pixel
+/// alignment needs NSMenuItem.attributedTitle with a right tab stop, which muda
+/// does not expose - revisit if the rounding ever looks off.
+fn char_width(c: char) -> u32 {
+    match c {
+        ' ' => 280,
+        'i' | 'j' | 'l' | 'I' | '.' | ',' | ';' | ':' | '!' | '|' | '\'' | 't' | 'f' | 'r' => 300,
+        'm' | 'w' => 820,
+        'M' | 'W' => 900,
+        'A'..='Z' | '0'..='9' => 620,
+        _ => 520,
+    }
+}
+
+/// Pads a label with spaces so its display-only chord hint starts at
+/// `CHORD_COLUMN`. Only the label is measured; the chord's Unicode glyphs never
+/// affect the padding.
+fn pad(label: &str, chord: &str) -> String {
+    if chord.is_empty() {
+        return label.to_string();
+    }
+    let width: u32 = label.chars().map(char_width).sum();
+    let spaces = ((CHORD_COLUMN.saturating_sub(width) + 140) / 280).max(2) as usize;
+    format!("{label}{}{chord}", " ".repeat(spaces))
+}
+
 /// Builds the application menu.
 pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
-    // Pads a label so its display-only chord hint sits in a rough right column.
-    let pad = |label: &str, chord: &str| format!("{label:<26}{chord}");
 
     // A clickable command item: its id is a JS CommandId, emitted on click.
     // The chord is label text only, never a real accelerator (see module docs).
@@ -92,7 +123,7 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .item(&PredefinedMenuItem::cut(app, None)?)
         .item(&PredefinedMenuItem::copy(app, None)?)
         .item(&PredefinedMenuItem::paste(app, None)?)
-        .item(&hint("Select All               \u{2318}A")?)
+        .item(&hint(&pad("Select All", "\u{2318}A"))?)
         .separator()
         .item(&cmd("format.toggleBold", "Bold", "\u{2318}B")?)
         .item(&cmd("format.toggleHighlight", "Highlight", "\u{21e7}\u{2318}H")?)
@@ -123,4 +154,22 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     let mut builder = tauri::menu::MenuBuilder::new(app);
     builder = builder.items(&[&app_menu, &file_menu, &edit_menu, &view_menu, &help_menu]);
     builder.build()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::pad;
+
+    fn chord_start(padded: &str) -> u32 {
+        let label: String = padded.chars().take_while(|c| *c != '\u{2318}').collect();
+        label.chars().map(super::char_width).sum()
+    }
+
+    #[test]
+    fn short_and_wide_labels_align_within_a_space() {
+        let a = pad("Undo", "\u{2318}Z");
+        let b = pad("Keyboard Shortcuts", "\u{2318}A");
+        let diff = chord_start(&a).abs_diff(chord_start(&b));
+        assert!(diff <= 280, "chords misaligned by {diff}/1000 em");
+    }
 }
