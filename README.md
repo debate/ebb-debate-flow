@@ -16,7 +16,6 @@ Public License 2.0](https://www.mozilla.org/MPL/2.0/).
 
 Desktop builds are found on the [releases page](https://github.com/shreerammodi/ebb/releases).
 
-
 ### MacOS
 
 1. Download the `.dmg` file for your Mac.
@@ -29,6 +28,9 @@ On first launch, you will need to authorize the app to open since it's unsigned.
 > Can’t be opened because Apple cannot check it for malicious software
 
 To resolve this, go to System Settings > Privacy & Security > scroll down > click "Open Anyway"
+
+If you would like to download standalone versions, you can download the
+`*.app.tar.gz` file for your respective architecture.
 
 ### Windows
 
