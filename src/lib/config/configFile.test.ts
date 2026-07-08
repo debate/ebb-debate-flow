@@ -35,15 +35,17 @@ describe("configFromState -> toAppConfig round-trip", () => {
 
     it("ships every default binding but stores none of them as overrides", () => {
         const file = configFromState({ ...sample, keymapOverrides: {} });
-        expect(Object.keys(file.keymap).length).toBeGreaterThan(10);
         expect(toAppConfig(file).keymapOverrides).toEqual({});
     });
 
-    it("ships every configurable command, emitting unbound ones as empty strings", () => {
+    it("nests dotted command ids into tables and ships every command", () => {
         const file = configFromState({ ...sample, keymapOverrides: {} });
+        // theme.light/dark/system group under a [keymap.theme] table.
+        expect(typeof file.keymap.theme).toBe("object");
+        // toHaveProperty reads the dot as a nested path.
         for (const id of Object.keys(COMMANDS)) expect(file.keymap).toHaveProperty(id);
         // info.open has no default chord, so it ships as "" ready to fill in.
-        expect(file.keymap["info.open"]).toBe("");
+        expect(file.keymap).toHaveProperty("info.open", "");
     });
 });
 
@@ -66,6 +68,13 @@ describe("toAppConfig validation", () => {
             keymap: { [aCommandId]: "g g", notACommand: "x", [anotherCommandId]: 42 },
         });
         expect(cfg.keymapOverrides).toEqual({ [aCommandId]: "g g" });
+    });
+
+    it("still reads the pre-nesting flat keymap shape so upgrades keep bindings", () => {
+        // Files written by earlier versions stored bindings as flat dotted keys
+        // under [keymap]; reading must recover them, not drop them.
+        const cfg = toAppConfig({ keymap: { "info.open": "z" } });
+        expect(cfg.keymapOverrides["info.open"]).toBe("z");
     });
 
     it("returns a fully-defaulted config for a non-object input", () => {

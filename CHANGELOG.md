@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Group the keybindings in `config.toml` into nested `[keymap.*]` tables
+  instead of quoted dotted keys. Files from earlier versions are still read
+  and migrate to the new layout on the next settings change.
+
+### Fixed
+
+- Create and source `config.toml` on launch even when no flow is open, so a
+  fresh install no longer skips it until the first flow is opened.
+
 ## [0.2.1] - 2026-07-08
 
 ### Fixed

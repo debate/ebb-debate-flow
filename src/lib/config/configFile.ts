@@ -31,14 +31,18 @@ export interface ConfigFileShape {
     aff_color: string | null;
     neg_color: string | null;
     /**
-     * commandId -> chord for every configurable command, defaults included and
-     * unbound commands emitted as "", so the file ships the full keybinding set
-     * editable in place. Reading keeps only the entries that differ from the
-     * preset as overrides.
+     * The full keybinding set as a nested tree: a dotted commandId like
+     * `theme.dark` becomes `[keymap.theme]` / `dark`, so related bindings group
+     * into real TOML tables rather than quoted flat keys. Every configurable
+     * command ships, unbound ones as "", so the file is editable in place.
+     * Reading keeps only the leaves that differ from the preset as overrides.
      */
-    keymap: Record<string, string>;
+    keymap: KeymapTree;
     update: { auto_check_enabled: boolean; tournament_mode: boolean };
 }
+
+/** A leaf chord or a nested namespace of them. */
+export type KeymapTree = { [segment: string]: string | KeymapTree };
 
 /** Accepts only a `#rrggbb` literal (the shape native color inputs emit). */
 function resolveColor(value: unknown): string | null {
@@ -61,6 +65,31 @@ function byCommand(bindings: Record<string, string>): Record<string, string> {
     return out;
 }
 
+/** Nests a flat `commandId -> chord` map into TOML tables along the dots. */
+function nestByNamespace(flat: Record<string, string>): KeymapTree {
+    const tree: KeymapTree = {};
+    for (const [commandId, chord] of Object.entries(flat)) {
+        const path = commandId.split(".");
+        let node = tree;
+        for (const seg of path.slice(0, -1)) {
+            if (typeof node[seg] !== "object") node[seg] = {};
+            node = node[seg] as KeymapTree;
+        }
+        node[path[path.length - 1]] = chord;
+    }
+    return tree;
+}
+
+/** Inverse of nestByNamespace: collapses the tree back to dotted commandIds. */
+function flattenNamespaces(node: unknown, prefix: string, out: Record<string, string>): void {
+    if (!node || typeof node !== "object") return;
+    for (const [seg, val] of Object.entries(node as Record<string, unknown>)) {
+        const id = prefix ? `${prefix}.${seg}` : seg;
+        if (typeof val === "string") out[id] = val;
+        else flattenNamespaces(val, id, out);
+    }
+}
+
 /** Serializes the store's current settings into the file shape. */
 export function configFromState(s: AppConfig): ConfigFileShape {
     return {
@@ -71,7 +100,7 @@ export function configFromState(s: AppConfig): ConfigFileShape {
         rfd_vim: s.rfdVim,
         aff_color: s.affColor,
         neg_color: s.negColor,
-        keymap: byCommand(effectiveKeymap(s.keymapOverrides).bindings),
+        keymap: nestByNamespace(byCommand(effectiveKeymap(s.keymapOverrides).bindings)),
         update: {
             auto_check_enabled: s.updateConfig.autoCheckEnabled,
             tournament_mode: s.updateConfig.tournamentMode,
@@ -87,19 +116,14 @@ export function toAppConfig(raw: unknown): AppConfig {
     // the preset as real overrides, so a shipped default file reads as no
     // customization at all.
     const defaults = byCommand(getPresetKeymap().bindings);
+    const fromFile: Record<string, string> = {};
+    flattenNamespaces(o.keymap, "", fromFile);
     const keymapOverrides: Record<string, string> = {};
-    if (o.keymap && typeof o.keymap === "object") {
-        for (const [commandId, chord] of Object.entries(o.keymap as Record<string, unknown>)) {
-            // Drop entries for commands that no longer exist, non-string chords,
-            // and any chord that just restates the default.
-            if (
-                commandId in COMMANDS &&
-                typeof chord === "string" &&
-                chord.length > 0 &&
-                chord !== defaults[commandId]
-            ) {
-                keymapOverrides[commandId] = chord;
-            }
+    for (const [commandId, chord] of Object.entries(fromFile)) {
+        // Drop entries for commands that no longer exist, empty chords, and any
+        // chord that just restates the default.
+        if (commandId in COMMANDS && chord.length > 0 && chord !== defaults[commandId]) {
+            keymapOverrides[commandId] = chord;
         }
     }
 

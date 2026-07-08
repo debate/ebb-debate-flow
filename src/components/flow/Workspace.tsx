@@ -7,7 +7,6 @@ import SearchPalette from "@/components/palette/SearchPalette";
 import SettingsPanel from "@/components/settings/SettingsPanel";
 import CriticalUpdateModal from "@/components/update/CriticalUpdateModal";
 import UpdateChip from "@/components/update/UpdateChip";
-import { useConfigFileSync } from "@/lib/config/useConfigFileSync";
 import { useDesktopMenu } from "@/lib/keymap/useDesktopMenu";
 import { useKeymap } from "@/lib/keymap/useKeymap";
 import { useFlowStore } from "@/lib/store/useFlowStore";
@@ -25,7 +24,6 @@ const HotGrid = dynamic(() => import("./HotGrid"), { ssr: false });
 export default function Workspace() {
     useKeymap();
     useDesktopMenu();
-    useConfigFileSync();
 
     const activeSheetId = useFlowStore((s) => s.activeSheetId);
     const splitSheetId = useFlowStore((s) => s.splitSheetId);

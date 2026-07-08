@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Toaster } from "sonner";
 
+import ConfigFileSync from "@/components/ConfigFileSync";
 import DesktopSelectAll from "@/components/DesktopSelectAll";
 import ThemeSync from "@/components/ThemeSync";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -298,6 +299,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <body className="font-sans antialiased">
                 <DesktopSelectAll />
                 <ThemeSync />
+                <ConfigFileSync />
                 <TooltipProvider>
                     <UpdateProvider>{children}</UpdateProvider>
                 </TooltipProvider>
