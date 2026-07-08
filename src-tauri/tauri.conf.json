@@ -42,7 +42,7 @@
             "endpoints": [
                 "https://github.com/shreerammodi/ebb/releases/latest/download/latest.json"
             ],
-            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDRCQ0ExQkZFRDlBNjY4RjYKUldUMmFLYlovaHZLUy9rcDhKaXhHakNLd3ZqVVJGWmxqRzdGWFRMc3MyYkpZYVVQdnVEU29IL3YK"
+            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDEzM0M1RTE2QkYxQThGMDMKUldRRGp4cS9GbDQ4RTZtWWUrem41cXNpNXNwM3Y2VEhXYnVlSzhJMFpQMzBrRVpwdDhTYlhCVVUK"
         }
     }
 }
