@@ -10,10 +10,10 @@ import "handsontable/styles/handsontable.min.css";
 import "handsontable/styles/ht-theme-main.min.css";
 
 import { executeCommand } from "@/lib/commands/commands";
+import { shiftMetaDown, type PasteShift } from "@/lib/grid/cellShift";
 import { classNameToMeta, metaToClassName, padGrid, trimGrid } from "@/lib/grid/codec";
 import { columnsForFlowSheet, type SpeechCol } from "@/lib/grid/flowColumns";
 import { getActiveHot, setActiveHot } from "@/lib/grid/hotInstance";
-import { shiftMetaDown, type PasteShift } from "@/lib/grid/insertPaste";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { resolveCommand } from "@/lib/keymap/resolve";
 import type { CellMeta, FlowSheet } from "@/lib/model/flow";

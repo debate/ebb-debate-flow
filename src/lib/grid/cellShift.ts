@@ -1,0 +1,133 @@
+/**
+ * Column-wise cell shifting: the one place that slides a run of cells up or
+ * down a single column, carrying its text and its decoration class together.
+ *
+ * Three callers sit on `shiftSpan`: `insertCell` opens a hole, `shiftMetaDown`
+ * chases a `shift_down` paste that Handsontable already applied to the text,
+ * and `moveBlock` runs the insert backwards to rotate a block through its
+ * neighbors.
+ */
+
+/** A single `setDataAtCell` change tuple. */
+export type CellChange = [row: number, col: number, value: string | null];
+
+/** The block a `shift_down` paste displaces, in visual grid coordinates. */
+export interface PasteShift {
+    row: number;
+    col: number;
+    width: number;
+    height: number;
+}
+
+/**
+ * The slice of Handsontable this module reads. Data writes are returned as
+ * changes rather than applied, so a caller can fold several columns into one
+ * `setDataAtCell` and record one undo action for the lot.
+ */
+export interface CellGrid {
+    countRows(): number;
+    countCols(): number;
+    getDataAtCell(row: number, col: number): string | null;
+    getCellMeta(row: number, col: number): { className?: unknown };
+    setCellMeta(row: number, col: number, key: "className", value: string): void;
+}
+
+const classAt = (grid: CellGrid, row: number, col: number) =>
+    (grid.getCellMeta(row, col).className ?? "") as string;
+
+/**
+ * Slides rows `[start, end)` of `col` by `delta`, carrying decorations with the
+ * text. Content whose target falls outside the grid is dropped. Vacated cells
+ * keep their stale value; every caller either blanks them or writes over them.
+ *
+ * The read order follows the shift (descending when moving down, ascending when
+ * moving up) so each read sees the pre-shift value even when source and target
+ * spans overlap.
+ */
+export function shiftSpan(
+    grid: CellGrid,
+    col: number,
+    start: number,
+    end: number,
+    delta: number,
+    opts?: { metaOnly?: boolean },
+): CellChange[] {
+    if (delta === 0) return [];
+    const rows = grid.countRows();
+    const from = Math.max(start, 0);
+    const to = Math.min(end, rows);
+    const changes: CellChange[] = [];
+
+    const step = delta > 0 ? -1 : 1;
+    for (let r = delta > 0 ? to - 1 : from; r >= from && r < to; r += step) {
+        const target = r + delta;
+        if (target < 0 || target >= rows) continue;
+        if (!opts?.metaOnly) changes.push([target, col, grid.getDataAtCell(r, col)]);
+        grid.setCellMeta(target, col, "className", classAt(grid, r, col));
+    }
+    return changes;
+}
+
+/**
+ * Opens a blank cell at `row`, pushing the rest of `col` down by one. The last
+ * row's content falls off the bottom.
+ */
+export function insertCell(grid: CellGrid, row: number, col: number): CellChange[] {
+    const changes = shiftSpan(grid, col, row, grid.countRows() - 1, 1);
+    grid.setCellMeta(row, col, "className", "");
+    changes.push([row, col, ""]);
+    return changes;
+}
+
+/**
+ * Moves each decoration class in the pasted columns down by `height`, leaving
+ * the pasted block bare. Classes pushed past the last row fall off, as their
+ * text does. Columns outside the pasted block keep their rows.
+ *
+ * Call this after the paste, once the grid has grown to hold the displaced rows.
+ */
+export function shiftMetaDown(grid: CellGrid, { row, col, width, height }: PasteShift): void {
+    const rows = grid.countRows();
+    const lastCol = Math.min(col + width, grid.countCols());
+    for (let c = col; c < lastCol; c++) {
+        shiftSpan(grid, c, row, rows, height, { metaOnly: true });
+        for (let r = row; r < Math.min(row + height, rows); r++) {
+            grid.setCellMeta(r, c, "className", "");
+        }
+    }
+}
+
+/**
+ * Rotates rows `[blockStart, blockStart + height)` of `col` by `delta`: the
+ * cells the block travels over close the hole behind it and reopen it ahead.
+ * The affected window is written in full, so nothing is created, overwritten,
+ * or lost off the bottom. Callers clamp `blockStart + delta` into
+ * `[0, countRows() - height]`.
+ */
+export function moveBlock(
+    grid: CellGrid,
+    col: number,
+    blockStart: number,
+    height: number,
+    delta: number,
+): CellChange[] {
+    if (delta === 0) return [];
+
+    // Read the block before shiftSpan writes over any of it.
+    const block: CellChange[] = [];
+    const classes: string[] = [];
+    for (let i = 0; i < height; i++) {
+        block.push([blockStart + delta + i, col, grid.getDataAtCell(blockStart + i, col)]);
+        classes.push(classAt(grid, blockStart + i, col));
+    }
+
+    const passed =
+        delta > 0
+            ? shiftSpan(grid, col, blockStart + height, blockStart + height + delta, -height)
+            : shiftSpan(grid, col, blockStart + delta, blockStart, height);
+
+    for (let i = 0; i < height; i++) {
+        grid.setCellMeta(blockStart + delta + i, col, "className", classes[i]);
+    }
+    return [...passed, ...block];
+}
