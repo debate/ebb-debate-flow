@@ -19,8 +19,10 @@ import { COMMANDS, type CommandId } from "@/lib/commands/registry";
 import { FONTS, DEFAULT_FONT_ID, type FontId } from "@/lib/fonts/registry";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { eventToChord } from "@/lib/keymap/resolve";
+import { restoreMenuAccelerators, suspendMenuAccelerators } from "@/lib/keymap/useDesktopMenu";
 import { useSettingsShortcut } from "@/lib/keymap/useSettingsShortcut";
 import type { Side } from "@/lib/model/types";
+import { isMacPlatform } from "@/lib/platform";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 import { DEFAULT_SIDE_COLORS } from "@/lib/theme/applySideColors";
 import type { ThemeMode } from "@/lib/theme/mode";
@@ -41,6 +43,17 @@ const SIDE_OPTIONS: { id: Side; label: string }[] = [
 ];
 
 const COMMAND_LIST = Object.values(COMMANDS);
+
+/**
+ * Chords the native menu permanently owns and never exposes to the keymap:
+ * Select All and Cut/Copy/Paste keep their own OS accelerators regardless of
+ * any rebind, and mod+Q quits the app. Recording one of these is a silent
+ * no-op rather than a saved override that would never fire.
+ */
+function isReservedChord(chord: string): boolean {
+    const mod = isMacPlatform() ? "Meta" : "Ctrl";
+    return [`${mod}+a`, `${mod}+c`, `${mod}+v`, `${mod}+x`, `${mod}+q`].includes(chord);
+}
 
 type Category = "display" | "editor" | "keyboard" | "updates";
 
@@ -97,6 +110,16 @@ export default function SettingsPanel() {
         }
     }, [open]);
 
+    // Real menu accelerators would otherwise consume the chord being recorded
+    // (and run its command) before the recorder's keydown handler sees it.
+    // Suspended for the duration of recording, however it ends: chord
+    // accepted, cancelled, or the panel unmounting mid-recording.
+    useEffect(() => {
+        if (!recording) return;
+        suspendMenuAccelerators();
+        return () => restoreMenuAccelerators();
+    }, [recording]);
+
     const chordByCommand = useMemo(() => {
         const keymap = effectiveKeymap(keymapOverrides);
         return chordForCommand(keymap.bindings);
@@ -130,6 +153,7 @@ export default function SettingsPanel() {
                 altKey: e.altKey,
                 shiftKey: e.shiftKey,
             });
+            if (isReservedChord(chord)) return;
             setKeymapOverride(recording, chord);
             setRecording(null);
             return;

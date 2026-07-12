@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { chordToAccelerator, chordForCommand, menuAccelerators } from "./accelerator";
+import {
+    chordToAccelerator,
+    chordForCommand,
+    menuAccelerators,
+    MENU_COMMAND_IDS,
+} from "./accelerator";
 import type { Keymap } from "./types";
 
 describe("chordToAccelerator", () => {
@@ -39,6 +44,12 @@ describe("chordToAccelerator", () => {
         expect(chordToAccelerator("Enter")).toBeNull(); // bare named key
         expect(chordToAccelerator("Meta+z Meta+x")).toBeNull(); // two-key sequence
         expect(chordToAccelerator("Meta+?")).toBeNull(); // shifted symbol has no token
+        expect(chordToAccelerator("Meta++")).toBeNull(); // literal "+" key has no muda token
+        expect(chordToAccelerator("Meta++ Meta+x")).toBeNull(); // two-key sequence, first chord ends in "+"
+    });
+
+    it("treats a literal space key after a modifier as Space, not a sequence separator", () => {
+        expect(chordToAccelerator("Meta+ ")).toBe("Cmd+Space");
     });
 });
 
@@ -72,7 +83,8 @@ describe("menuAccelerators", () => {
         expect(accels["sheet.next"]).toBe(""); // bare printable
         expect(accels["sheet.rename"]).toBe("F1"); // rebound to a function key
         expect(accels["sidebar.toggle"]).toBe(""); // unbound in this keymap
-        // Every menu command id is present, even when unbound.
-        expect(Object.keys(accels).length).toBeGreaterThanOrEqual(18);
+        // Every menu command id is present, even when unbound, and no others.
+        for (const id of MENU_COMMAND_IDS) expect(accels).toHaveProperty(id);
+        expect(Object.keys(accels).length).toBe(MENU_COMMAND_IDS.length);
     });
 });

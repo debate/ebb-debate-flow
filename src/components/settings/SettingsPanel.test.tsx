@@ -18,6 +18,7 @@ import { UpdateProvider } from "@/components/update/UpdateProvider";
 import { COMMANDS } from "@/lib/commands/registry";
 import { FONTS, DEFAULT_FONT_ID } from "@/lib/fonts/registry";
 import { effectiveKeymap } from "@/lib/keymap/effective";
+import { isMacPlatform } from "@/lib/platform";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
 // Force desktop so the Updates category is present. Only the exported isDesktop
@@ -27,6 +28,13 @@ vi.mock("@/lib/update/adapter", async (importActual) => ({
     ...(await importActual<typeof import("@/lib/update/adapter")>()),
     isDesktop: () => true,
 }));
+
+vi.mock("@/lib/keymap/useDesktopMenu", () => ({
+    suspendMenuAccelerators: vi.fn(),
+    restoreMenuAccelerators: vi.fn(),
+}));
+
+import { restoreMenuAccelerators, suspendMenuAccelerators } from "@/lib/keymap/useDesktopMenu";
 
 import SettingsPanel from "./SettingsPanel";
 
@@ -39,6 +47,7 @@ function renderSettingsPanel() {
 }
 
 const KEY = "ebb-keymap-settings";
+const MOD = isMacPlatform() ? "Meta" : "Ctrl";
 
 function resetStore() {
     useFlowStore.setState({
@@ -70,6 +79,7 @@ describe("SettingsPanel", () => {
     beforeEach(() => {
         window.localStorage.clear();
         resetStore();
+        vi.clearAllMocks();
     });
 
     it("renders nothing when settings are closed", () => {
@@ -124,6 +134,66 @@ describe("SettingsPanel", () => {
         // Still recording, no override saved yet.
         expect(useFlowStore.getState().keymapOverrides["sheet.next"]).toBeUndefined();
         expect(screen.getByTestId("record-sheet.next").textContent).toBe("Cancel");
+    });
+
+    it("ignores chords the native menu permanently owns (Select All, Cut/Copy/Paste, Quit)", async () => {
+        const user = userEvent.setup();
+        renderSettingsPanel();
+        await gotoKeyboard(user);
+
+        await user.click(screen.getByTestId("record-sheet.next"));
+        for (const key of ["a", "c", "v", "x", "q"]) {
+            dispatchPanelKey(key, { metaKey: MOD === "Meta", ctrlKey: MOD === "Ctrl" });
+        }
+
+        // Still recording, no override saved for any of the reserved chords.
+        expect(useFlowStore.getState().keymapOverrides["sheet.next"]).toBeUndefined();
+        expect(screen.getByTestId("record-sheet.next").textContent).toBe("Cancel");
+    });
+
+    describe("menu accelerator suspension while recording", () => {
+        it("suspends on record start and restores once a chord is accepted", async () => {
+            const user = userEvent.setup();
+            renderSettingsPanel();
+            await gotoKeyboard(user);
+
+            await user.click(screen.getByTestId("record-sheet.next"));
+            expect(suspendMenuAccelerators).toHaveBeenCalledTimes(1);
+            expect(restoreMenuAccelerators).not.toHaveBeenCalled();
+
+            dispatchPanelKey("g");
+            expect(restoreMenuAccelerators).toHaveBeenCalledTimes(1);
+        });
+
+        it("restores when recording is cancelled via Escape", async () => {
+            const user = userEvent.setup();
+            renderSettingsPanel();
+            await gotoKeyboard(user);
+
+            await user.click(screen.getByTestId("record-sheet.next"));
+            dispatchPanelKey("Escape");
+            expect(restoreMenuAccelerators).toHaveBeenCalledTimes(1);
+        });
+
+        it("restores when recording is cancelled via the Cancel button", async () => {
+            const user = userEvent.setup();
+            renderSettingsPanel();
+            await gotoKeyboard(user);
+
+            await user.click(screen.getByTestId("record-sheet.next"));
+            await user.click(screen.getByTestId("record-sheet.next"));
+            expect(restoreMenuAccelerators).toHaveBeenCalledTimes(1);
+        });
+
+        it("restores if the panel unmounts mid-recording", async () => {
+            const user = userEvent.setup();
+            const { unmount } = renderSettingsPanel();
+            await gotoKeyboard(user);
+
+            await user.click(screen.getByTestId("record-sheet.next"));
+            unmount();
+            expect(restoreMenuAccelerators).toHaveBeenCalledTimes(1);
+        });
     });
 
     it("Reset clears an override back to the preset binding", async () => {

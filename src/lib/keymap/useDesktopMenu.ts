@@ -5,8 +5,8 @@ import { useEffect } from "react";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 import { isDesktop } from "@/lib/update/adapter";
 
-import { menuAccelerators } from "./accelerator";
-import { dispatchMenuCommand } from "./menuDispatch";
+import { MENU_COMMAND_IDS, menuAccelerators } from "./accelerator";
+import { SELECT_ALL_MENU_ID, dispatchMenuCommand } from "./menuDispatch";
 import { effectiveKeymap } from "./useKeymap";
 
 /**
@@ -73,4 +73,33 @@ export function useDesktopMenu(): void {
             unsubscribe();
         };
     }, []);
+}
+
+/**
+ * Strips every strippable menu accelerator so an installed chord (e.g.
+ * Cmd+Backspace) cannot fire its command while the settings recorder is
+ * capturing keydowns for a rebind. Bypasses the sync effect's fingerprint;
+ * restoreMenuAccelerators recomputes the true map afterward, and any later
+ * store-driven sync still converges on it.
+ */
+export function suspendMenuAccelerators(): void {
+    if (!isDesktop()) return;
+    const accels: Record<string, string> = { [SELECT_ALL_MENU_ID]: "" };
+    for (const id of MENU_COMMAND_IDS) accels[id] = "";
+    import("@tauri-apps/api/core")
+        .then(({ invoke }) => invoke("rebuild_menu", { accels }))
+        .catch(() => {
+            // A stale menu is cosmetic; never crash the app over it.
+        });
+}
+
+/** Restores the menu's accelerators to the effective keymap. */
+export function restoreMenuAccelerators(): void {
+    if (!isDesktop()) return;
+    const accels = menuAccelerators(effectiveKeymap());
+    import("@tauri-apps/api/core")
+        .then(({ invoke }) => invoke("rebuild_menu", { accels }))
+        .catch(() => {
+            // A stale menu is cosmetic; never crash the app over it.
+        });
 }

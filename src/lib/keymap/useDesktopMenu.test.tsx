@@ -19,10 +19,14 @@ vi.mock("@tauri-apps/api/core", () => ({
     invoke: (...args: unknown[]) => invoke(...args),
 }));
 
-vi.mock("./menuDispatch", () => ({ dispatchMenuCommand: vi.fn() }));
+vi.mock("./menuDispatch", () => ({
+    dispatchMenuCommand: vi.fn(),
+    SELECT_ALL_MENU_ID: "selectAll",
+}));
 
+import { MENU_COMMAND_IDS } from "./accelerator";
 import { dispatchMenuCommand } from "./menuDispatch";
-import { useDesktopMenu } from "./useDesktopMenu";
+import { restoreMenuAccelerators, suspendMenuAccelerators, useDesktopMenu } from "./useDesktopMenu";
 
 function Harness() {
     useDesktopMenu();
@@ -111,6 +115,48 @@ describe("accelerator sync", () => {
 
     it("does not invoke in the web build", async () => {
         render(<Harness />);
+        await Promise.resolve();
+        expect(invoke).not.toHaveBeenCalled();
+    });
+});
+
+describe("suspendMenuAccelerators", () => {
+    it("strips every menu command id and selectAll to an empty accelerator", async () => {
+        enableDesktop();
+        suspendMenuAccelerators();
+        await vi.waitFor(() => expect(invoke).toHaveBeenCalled());
+        const [command, payload] = invoke.mock.calls[0]! as [
+            string,
+            { accels: Record<string, string> },
+        ];
+        expect(command).toBe("rebuild_menu");
+        for (const id of MENU_COMMAND_IDS) expect(payload.accels[id]).toBe("");
+        expect(payload.accels["selectAll"]).toBe("");
+    });
+
+    it("does not invoke in the web build", async () => {
+        suspendMenuAccelerators();
+        await Promise.resolve();
+        expect(invoke).not.toHaveBeenCalled();
+    });
+});
+
+describe("restoreMenuAccelerators", () => {
+    it("pushes the effective keymap's accelerators", async () => {
+        enableDesktop();
+        useFlowStore.setState({ keymapOverrides: { "sheet.rename": "F1" } });
+        restoreMenuAccelerators();
+        await vi.waitFor(() => expect(invoke).toHaveBeenCalled());
+        const [command, payload] = invoke.mock.calls[0]! as [
+            string,
+            { accels: Record<string, string> },
+        ];
+        expect(command).toBe("rebuild_menu");
+        expect(payload.accels["sheet.rename"]).toBe("F1");
+    });
+
+    it("does not invoke in the web build", async () => {
+        restoreMenuAccelerators();
         await Promise.resolve();
         expect(invoke).not.toHaveBeenCalled();
     });

@@ -17,6 +17,9 @@ beforeEach(() => {
     execCommand = vi.fn();
     document.execCommand = execCommand as unknown as typeof document.execCommand;
     useFlowStore.setState({ keymapOverrides: {} });
+    // Flow commands only run on the flow screen; the pre-existing tests below
+    // exercise commands, so they run as if already on that route.
+    window.history.pushState({}, "", "/flow");
 });
 
 afterEach(() => {
@@ -142,5 +145,42 @@ describe("dispatchMenuCommand with keymap overrides", () => {
         dispatchMenuCommand("sheet.rename");
         expect(select).toHaveBeenCalledTimes(1);
         expect(executeCommand).not.toHaveBeenCalled();
+    });
+});
+
+describe("dispatchMenuCommand off the flow screen", () => {
+    beforeEach(() => {
+        window.history.pushState({}, "", "/");
+    });
+
+    it("does not run a flow-scoped command", () => {
+        dispatchMenuCommand("sheet.newAff");
+        expect(executeCommand).not.toHaveBeenCalled();
+    });
+
+    it("still runs a globally safe command", () => {
+        dispatchMenuCommand("settings.open");
+        expect(executeCommand).toHaveBeenCalledWith("settings.open");
+    });
+
+    it("still runs selectAll", () => {
+        const input = focusInput("hello");
+        const select = vi.spyOn(input, "select");
+        dispatchMenuCommand("selectAll");
+        expect(select).toHaveBeenCalledTimes(1);
+        expect(executeCommand).not.toHaveBeenCalled();
+    });
+
+    it("still re-dispatches a native-edit chord while a text field is focused", () => {
+        focusInput("typed");
+        dispatchMenuCommand("edit.undo");
+        expect(execCommand).toHaveBeenCalledWith("undo");
+        expect(executeCommand).not.toHaveBeenCalled();
+    });
+
+    it("runs a flow-scoped command again once back on the flow screen", () => {
+        window.history.pushState({}, "", "/flow");
+        dispatchMenuCommand("sheet.newAff");
+        expect(executeCommand).toHaveBeenCalledWith("sheet.newAff");
     });
 });

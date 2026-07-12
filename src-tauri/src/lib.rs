@@ -37,7 +37,8 @@ pub fn run() {
             #[cfg(desktop)]
             config::init(app.handle());
 
-            // Install the native menu (display-only; see `menu.rs`).
+            // Install the native menu; accelerators follow the JS keymap via
+            // rebuild_menu (see menu.rs).
             let handle = app.handle();
             let app_menu = menu::build(handle, &std::collections::HashMap::new())?;
             app.set_menu(app_menu)?;

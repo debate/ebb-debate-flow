@@ -22,6 +22,29 @@ import { effectiveKeymap } from "./useKeymap";
 /** Menu id of the Select All item. Not a CommandId; there is no app command. */
 export const SELECT_ALL_MENU_ID = "selectAll";
 
+/** Pathname of the flow screen, the only route where useKeymap and the palette mount. */
+const FLOW_ROUTE = "/flow";
+
+/**
+ * Commands safe to run from any route. Everything else touches the in-memory
+ * round (sheets, cells, panels) or persists a flow-only display setting, and
+ * the store never clears `round` on navigation, so off the flow screen that
+ * state is stale: running them would mutate a round that isn't showing,
+ * persist a setting nobody can see change, or latch a panel open for the
+ * next flow load.
+ */
+const GLOBAL_COMMANDS = new Set<CommandId>([
+    "settings.open",
+    "theme.light",
+    "theme.dark",
+    "theme.system",
+]);
+
+/** True when the current route is not the flow screen and the command is flow-scoped. */
+function isBlockedOffFlow(id: CommandId): boolean {
+    return window.location.pathname !== FLOW_ROUTE && !GLOBAL_COMMANDS.has(id);
+}
+
 /** The focused element, when it is a text-entry field; null otherwise. */
 function focusedTextEntry(): HTMLElement | null {
     const el = document.activeElement;
@@ -94,5 +117,6 @@ export function dispatchMenuCommand(id: string): void {
             return;
         }
     }
+    if (isBlockedOffFlow(commandId)) return;
     executeCommand(commandId);
 }
