@@ -2,13 +2,10 @@
 
 import { CircleQuestionMark, House, Settings } from "lucide-react";
 import Link from "next/link";
-import { useRef } from "react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
 import { teamCode } from "@/lib/model/teamCode";
-import { readFlowFile } from "@/lib/persistence/flowIo";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import ExportMenu from "./ExportMenu";
@@ -18,7 +15,6 @@ import SpeechSwitcher from "./SpeechSwitcher";
 export default function RoundHeader() {
     const role = useFlowStore((s) => s.round?.role);
     const scouting = useFlowStore((s) => s.round?.scouting);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     if (!role || !scouting) return null;
 
@@ -32,22 +28,6 @@ export default function RoundHeader() {
             : role === "neg"
               ? `${negCode} vs ${affCode}`
               : `${affCode} vs ${negCode}`;
-
-    function handleImportClick() {
-        fileInputRef.current?.click();
-    }
-
-    async function handleImportChange(e: React.ChangeEvent<HTMLInputElement>) {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        try {
-            const imported = await readFlowFile(file);
-            useFlowStore.getState().loadRound(imported);
-        } catch {
-            toast.error("Failed to import: file may be invalid or from an incompatible version.");
-        }
-        e.target.value = "";
-    }
 
     return (
         <header
@@ -69,15 +49,6 @@ export default function RoundHeader() {
             </div>
 
             <div className="no-print flex items-center gap-2">
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".json"
-                    aria-label="Import round file"
-                    className="hidden"
-                    onChange={handleImportChange}
-                    data-testid="import-file-input"
-                />
                 <SpeechSwitcher />
                 <Tip label="Bulk add sheets" command="sheet.bulkAdd">
                     <Button
@@ -138,16 +109,6 @@ export default function RoundHeader() {
                     </Button>
                 </Tip>
                 <ExportMenu />
-                <Tip label="Import round">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleImportClick}
-                        data-testid="import-btn"
-                    >
-                        Import
-                    </Button>
-                </Tip>
             </div>
         </header>
     );

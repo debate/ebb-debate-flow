@@ -4,7 +4,7 @@
  * Uses the real Zustand store. Resets state between tests for isolation.
  */
 
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
@@ -31,7 +31,6 @@ vi.mock("next/link", () => ({
 // Mock io functions used by the header
 vi.mock("@/lib/persistence/flowIo", () => ({
     downloadFlowFile: vi.fn(),
-    readFlowFile: vi.fn(),
 }));
 vi.mock("@/lib/export/xlsx", () => ({
     downloadXlsx: vi.fn().mockResolvedValue(undefined),
@@ -89,12 +88,12 @@ describe("RoundHeader", () => {
         expect(screen.getByText("Alpha TA (Aff) vs Beta TB (Neg)")).toBeInTheDocument();
     });
 
-    it("renders the back link, export menu, and Import button", () => {
+    it("renders the back link and export menu, but no import button", () => {
         setupRound("aff");
         renderRoundHeader();
         expect(screen.getByTestId("back-to-flows")).toBeInTheDocument();
         expect(screen.getByTestId("export-btn")).toBeInTheDocument();
-        expect(screen.getByTestId("import-btn")).toBeInTheDocument();
+        expect(screen.queryByTestId("import-btn")).not.toBeInTheDocument();
         expect(screen.queryByTestId("new-round-btn")).not.toBeInTheDocument();
         expect(screen.queryByTestId("print-btn")).not.toBeInTheDocument();
     });
@@ -125,28 +124,5 @@ describe("RoundHeader", () => {
         renderRoundHeader();
         fireEvent.click(screen.getByTestId("guide-btn"));
         expect(useFlowStore.getState().cheatsheetOpen).toBe(true);
-    });
-
-    it("replaces the store round when a valid file is imported", async () => {
-        const { readFlowFile } = await import("@/lib/persistence/flowIo");
-
-        setupRound("aff");
-        const importedRound = makeFlowRound("neg");
-        vi.mocked(readFlowFile).mockResolvedValueOnce(importedRound);
-
-        renderRoundHeader();
-
-        const fileInput = screen.getByTestId("import-file-input");
-        const fakeFile = new File(["{}"], "round.json", {
-            type: "application/json",
-        });
-        fireEvent.change(fileInput, { target: { files: [fakeFile] } });
-
-        await waitFor(() => {
-            const state = useFlowStore.getState();
-            expect(state.round).toBe(importedRound);
-            // The active sheet resets to the imported round's first flow sheet.
-            expect(importedRound.sheets.some((s) => s.id === state.activeSheetId)).toBe(true);
-        });
     });
 });
