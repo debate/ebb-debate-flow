@@ -102,7 +102,7 @@ export default function Sidebar() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="flex-1"
+                    className="border-aff text-aff dark:border-aff flex-1"
                     onClick={() => executeCommand("sheet.newAff")}
                     data-testid="add-aff"
                 >
@@ -112,7 +112,7 @@ export default function Sidebar() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="flex-1"
+                    className="border-neg text-neg dark:border-neg flex-1"
                     onClick={() => executeCommand("sheet.newNeg")}
                     data-testid="add-neg"
                 >
