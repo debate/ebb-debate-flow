@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.7] - 2026-07-15
+
+### Fixed
+
+- Reordering sheets by drag-and-drop now works in the desktop app; the
+  window's OS-level drag-drop handler no longer swallows the in-app drop.
+- The sidebar now accepts a sheet drop anywhere in the sheet list - between
+  rows, on the section label, or below the last row - instead of only when
+  released directly on a row.
+
 ## [0.3.6] - 2026-07-15
 
 ### Changed
@@ -186,7 +196,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v0.3.6...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v0.3.7...HEAD
+[0.3.7]: https://github.com/shreerammodi/ebb/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/shreerammodi/ebb/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/shreerammodi/ebb/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/shreerammodi/ebb/compare/v0.3.3...v0.3.4
