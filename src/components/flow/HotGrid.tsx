@@ -489,6 +489,17 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                 return false;
             }
 
+            // At col 0, Shift+Tab has nowhere to move inside the grid, so
+            // Handsontable lets the browser tab focus out to the previous
+            // tabbable element (a sidebar sheet). Swallow it so focus stays put.
+            if (hot && e.key === "Tab" && e.shiftKey) {
+                if (hot.getSelectedRangeLast()?.highlight.col === 0) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+            }
+
             // A chord bound to an app command must run as a command, not type into
             // the grid. With no Ctrl/Meta modifier Handsontable "fast edits" the
             // selected cell - opening an empty editor whose later commit wipes the
