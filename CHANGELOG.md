@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-07-16
+
+### Added
+
+- A Display setting to turn off scroll-to-zoom. Mod+scroll and trackpad pinch
+  zoom the flow grid by default; the toggle disables that gesture, and the grid
+  still swallows it so it never falls through to browser page zoom.
+
+### Changed
+
+- Settings copy: "Argument colors" is now "Side colors", and several row
+  descriptions are shorter.
+
+### Fixed
+
+- Shift+Tab in the first grid column keeps the cursor in the grid instead of
+  yielding focus out to the sidebar.
+
+### Removed
+
+- Move mode no longer follows the mouse; picking up a block and dropping it is
+  keyboard-driven (Up/Down/Enter) as before.
+
 ## [0.4.0] - 2026-07-16
 
 ### Added
