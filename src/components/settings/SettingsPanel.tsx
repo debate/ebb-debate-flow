@@ -1,6 +1,13 @@
 "use client";
 
-import { Keyboard, type LucideIcon, Palette, PenLine, RefreshCw, X } from "lucide-react";
+import {
+    ArrowsClockwise,
+    type Icon,
+    Keyboard,
+    Palette,
+    PencilSimpleLine,
+    X,
+} from "@phosphor-icons/react";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -58,15 +65,15 @@ function isReservedChord(chord: string): boolean {
 
 type Category = "display" | "editor" | "keyboard" | "updates";
 
-const BASE_CATEGORIES: { id: Category; label: string; icon: LucideIcon }[] = [
+const BASE_CATEGORIES: { id: Category; label: string; icon: Icon }[] = [
     { id: "display", label: "Display", icon: Palette },
-    { id: "editor", label: "Editor", icon: PenLine },
+    { id: "editor", label: "Editor", icon: PencilSimpleLine },
     { id: "keyboard", label: "Keyboard", icon: Keyboard },
 ];
 
 // The Updates category is desktop-only; the web build never has an updater.
-const CATEGORIES: { id: Category; label: string; icon: LucideIcon }[] = isDesktop()
-    ? [...BASE_CATEGORIES, { id: "updates", label: "Updates", icon: RefreshCw }]
+const CATEGORIES: { id: Category; label: string; icon: Icon }[] = isDesktop()
+    ? [...BASE_CATEGORIES, { id: "updates", label: "Updates", icon: ArrowsClockwise }]
     : BASE_CATEGORIES;
 
 function chordForCommand(bindings: Record<string, CommandId>): Record<string, string> {

@@ -9,7 +9,7 @@ import { githubDark } from "@fsegurai/codemirror-theme-github-dark";
 import { githubLight } from "@fsegurai/codemirror-theme-github-light";
 import { vim } from "@replit/codemirror-vim";
 import DOMPurify from "dompurify";
-import { X } from "lucide-react";
+import { X } from "@phosphor-icons/react";
 import { marked } from "marked";
 import { useEffect, useRef, useState } from "react";
 

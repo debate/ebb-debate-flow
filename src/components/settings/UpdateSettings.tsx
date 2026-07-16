@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDownToLine } from "lucide-react";
+import { DownloadSimple } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -106,7 +106,7 @@ export default function UpdateSettings() {
                     : "cursor-not-allowed opacity-60",
             )}
         >
-            <ArrowDownToLine />
+            <DownloadSimple />
             Install latest update
         </Button>
     );

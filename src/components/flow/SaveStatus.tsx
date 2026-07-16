@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, LoaderCircle, TriangleAlert } from "lucide-react";
+import { Check, CircleNotch, Warning } from "@phosphor-icons/react";
 import { AnimatePresence, m } from "motion/react";
 import { useEffect, useState } from "react";
 
@@ -50,7 +50,7 @@ export default function SaveStatus() {
                 data-state="error"
                 className="text-warn flex flex-none items-center gap-1.5 text-xs font-medium"
             >
-                <TriangleAlert size={13} aria-hidden="true" />
+                <Warning size={13} aria-hidden="true" />
                 Not saved
                 <button
                     type="button"
@@ -85,7 +85,7 @@ export default function SaveStatus() {
                     className="flex items-center gap-1.5"
                 >
                     {saving ? (
-                        <LoaderCircle
+                        <CircleNotch
                             aria-hidden="true"
                             className="text-muted-foreground size-3.5 motion-safe:animate-spin"
                         />

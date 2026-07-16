@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDownToLine } from "lucide-react";
+import { DownloadSimple } from "@phosphor-icons/react";
 import { AnimatePresence, m } from "motion/react";
 
 import { cn } from "@/lib/utils";
@@ -37,7 +37,7 @@ export default function UpdateChip() {
                         "hover:bg-accent transition-colors focus-visible:outline-2",
                     )}
                 >
-                    <ArrowDownToLine className="size-3.5" />
+                    <DownloadSimple className="size-3.5" />
                     <span className="font-medium">Update {version}</span>
                     <span className="text-muted-foreground">· Install</span>
                 </m.button>

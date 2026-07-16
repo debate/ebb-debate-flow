@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Check } from "lucide-react";
+import { CaretDown, Check } from "@phosphor-icons/react";
 import { Select as SelectPrimitive } from "radix-ui";
 import * as React from "react";
 
@@ -32,7 +32,7 @@ function SelectTrigger({
         >
             {children}
             <SelectPrimitive.Icon asChild>
-                <ChevronDown className="size-4 opacity-50" />
+                <CaretDown className="size-4 opacity-50" />
             </SelectPrimitive.Icon>
         </SelectPrimitive.Trigger>
     );

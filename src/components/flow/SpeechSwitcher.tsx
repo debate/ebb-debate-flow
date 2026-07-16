@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { CaretDown } from "@phosphor-icons/react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +22,7 @@ export default function SpeechSwitcher() {
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" data-testid="speech-switcher-btn">
                         Speech
-                        <ChevronDown className="size-4 opacity-60" />
+                        <CaretDown className="size-4 opacity-60" />
                     </Button>
                 </DropdownMenuTrigger>
             </Tip>

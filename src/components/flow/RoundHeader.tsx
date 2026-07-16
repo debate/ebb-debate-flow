@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleQuestionMark, House, Settings } from "lucide-react";
+import { Gear, House, Question } from "@phosphor-icons/react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,7 @@ export default function RoundHeader() {
                     className="text-muted-foreground hover:text-foreground flex flex-none items-center gap-1.5 text-[13px]"
                     data-testid="back-to-flows"
                 >
-                    <House className="size-3.5" aria-hidden="true" />
+                    <House className="size-4" aria-hidden="true" />
                     Flows
                 </Link>
                 <span aria-hidden="true" className="bg-border h-4 w-px flex-none" />
@@ -85,7 +85,7 @@ export default function RoundHeader() {
                         aria-label="Keyboard shortcuts"
                         data-testid="guide-btn"
                     >
-                        <CircleQuestionMark className="size-4" />
+                        <Question className="size-4.5" />
                     </Button>
                 </Tip>
                 <Tip label="Settings" command="settings.open">
@@ -96,7 +96,7 @@ export default function RoundHeader() {
                         aria-label="Settings"
                         data-testid="settings-btn"
                     >
-                        <Settings className="size-4" />
+                        <Gear className="size-4.5" />
                     </Button>
                 </Tip>
                 <ExportMenu />
