@@ -26,4 +26,17 @@ describe("NewFlowButton", () => {
         expect(rounds).toHaveLength(1);
         expect(rounds[0].role).toBe("neg");
     });
+
+    it("creates a pf round with the chosen speaking order", async () => {
+        render(<NewFlowButton />);
+        await userEvent.click(screen.getByTestId("new-flow"));
+        await userEvent.click(screen.getByTestId("new-flow-pf-aff"));
+        await userEvent.click(await screen.findByTestId("new-flow-pf-aff-neg"));
+        await waitFor(() => expect(push).toHaveBeenCalledTimes(1));
+        const rounds = await flowDb.flows.toArray();
+        expect(rounds).toHaveLength(1);
+        expect(rounds[0].role).toBe("aff");
+        expect(rounds[0].event).toBe("pf");
+        expect(rounds[0].firstSide).toBe("neg");
+    });
 });

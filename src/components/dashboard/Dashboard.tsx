@@ -170,6 +170,10 @@ export default function Dashboard() {
                                 Judge
                             </button>
                         </div>
+
+                        <p className="text-muted-foreground text-[12.5px]">
+                            Flowing Public Forum? Use + New flow.
+                        </p>
                     </div>
                 ) : (
                     <>
