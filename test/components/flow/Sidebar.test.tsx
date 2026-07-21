@@ -10,8 +10,11 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 
 import Sidebar from "@/components/flow/Sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { focusActiveHot } from "@/lib/grid/hotInstance";
 import { makeFlowRound } from "@/lib/model/flow";
 import { useFlowStore } from "@/lib/store/useFlowStore";
+
+vi.mock("@/lib/grid/hotInstance", () => ({ focusActiveHot: vi.fn() }));
 
 function renderSidebar() {
     return render(
@@ -154,6 +157,20 @@ describe("Sidebar", () => {
             "New Name",
         );
         expect(screen.queryByTestId(`rename-input-${caseId}`)).toBeNull();
+    });
+
+    it("refocuses the grid after committing a rename", async () => {
+        const user = userEvent.setup();
+        const { caseId } = setupRound();
+
+        renderSidebar();
+        await user.dblClick(screen.getByTestId(`sheet-${caseId}`));
+        const input = screen.getByTestId(`rename-input-${caseId}`);
+        await waitFor(() => expect(input).toHaveFocus());
+        vi.mocked(focusActiveHot).mockClear();
+        await user.type(input, "{Enter}");
+
+        expect(focusActiveHot).toHaveBeenCalled();
     });
 
     it("pressing Escape in rename input cancels without renaming", async () => {

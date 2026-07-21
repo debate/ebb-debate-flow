@@ -1,8 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import SheetTitleBar from "@/components/flow/SheetTitleBar";
+import { focusActiveHot } from "@/lib/grid/hotInstance";
 import { useFlowStore } from "@/lib/store/useFlowStore";
+
+vi.mock("@/lib/grid/hotInstance", () => ({ focusActiveHot: vi.fn() }));
 
 describe("SheetTitleBar", () => {
     it("shows the sheet title", () => {
@@ -40,5 +43,16 @@ describe("SheetTitleBar", () => {
         fireEvent.change(input, { target: { value: "Politics" } });
         fireEvent.keyDown(input, { key: "Enter" });
         expect(renamed).toEqual(["s1", "Politics"]);
+    });
+
+    it("refocuses the grid after committing a rename", () => {
+        useFlowStore.setState({ renameSheet: () => {} });
+        vi.mocked(focusActiveHot).mockClear();
+        render(<SheetTitleBar sheetId="s1" title="Econ DA" side="aff" />);
+        fireEvent.click(screen.getByText("Econ DA"));
+        const input = screen.getByTestId("sheet-title-input-s1");
+        fireEvent.change(input, { target: { value: "Politics" } });
+        fireEvent.keyDown(input, { key: "Enter" });
+        expect(focusActiveHot).toHaveBeenCalled();
     });
 });

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { loadFeatures } from "@/components/MotionRoot";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
+import { focusActiveHot } from "@/lib/grid/hotInstance";
 import type { FlowSheet } from "@/lib/model/flow";
 import { focusedSheetId, useFlowStore } from "@/lib/store/useFlowStore";
 import { cn } from "@/lib/utils";
@@ -248,6 +249,7 @@ function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete
     function commit() {
         renameSheet(sheet.id, value.trim() || sheet.title);
         setRenamingSheet(null);
+        focusActiveHot();
     }
 
     function cancel() {

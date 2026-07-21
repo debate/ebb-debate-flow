@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { focusActiveHot } from "@/lib/grid/hotInstance";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +43,7 @@ export default function SheetTitleBar({
     function commit() {
         renameSheet(sheetId, value.trim() || title);
         setEditing(false);
+        focusActiveHot();
     }
 
     return (
